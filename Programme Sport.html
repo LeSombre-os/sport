@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Programme Force</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2a2a35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #2a2a35;
+  --surface: #333340;
+  --surface-h: #3a3a48;
+  --border: rgba(230,225,215,0.06);
+  --border-l: rgba(230,225,215,0.12);
+  --text: #ddd8ce;
+  --text2: #9a94a2;
+  --text3: #6e6880;
+  --a: #5a9aaa;
+  --a-bg: rgba(90,154,170,0.12);
+  --a-line: rgba(90,154,170,0.25);
+  --b: #c99550;
+  --b-bg: rgba(201,149,80,0.12);
+  --b-line: rgba(201,149,80,0.25);
+  --cx: #d16b4a;
+  --cx-h: #db7b5c;
+  --ok: #4a9a5c;
+  --ko: #d44a3a;
+  --r1: #5a5870;
+  --r2: #7a7488;
+  --r3: #c99550;
+  --r4: #d4a060;
+  --r5: #d16b4a;
+  --rad: 12px;
+  --rad-s: 8px;
+  --ff-h: 'Figtree', sans-serif;
+  --ff-b: 'Inter', sans-serif;
+  --shad: 0 2px 8px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.1);
+}
+
+html { font-size: 16px; }
+body {
+  font-family: var(--ff-b);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 820px; margin: 0 auto; padding: 20px 14px 32px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-family: var(--ff-b);
+  font-weight: 600;
+  font-size: .85rem;
+  color: #fff;
+  background: #444450;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3);
+  z-index: 200;
+  opacity: 0;
+  transition: all .3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok { background: var(--ok); color: #fff; }
+.toast.ko { background: var(--ko); color: #fff; }
+
+/* Header */
+.hdr { text-align: center; padding: 4px 0 6px; }
+.hdr h1 {
+  font-family: var(--ff-h);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+.hdr .sub {
+  font-size: .68rem;
+  color: var(--text3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-top: 0;
+}
+
+/* Next session */
+.nx { margin: 12px 0 16px; }
+.nx-in {
+  background: var(--surface);
+  border-radius: var(--rad);
+  padding: 18px 20px 16px;
+  text-align: center;
+  box-shadow: var(--shad);
+  position: relative;
+  overflow: hidden;
+}
+.nx-in::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  pointer-events: none;
+}
+.nx-a .nx-in::before { background: linear-gradient(135deg, var(--a), transparent); }
+.nx-b .nx-in::before { background: linear-gradient(135deg, var(--b), transparent); }
+.nx-l {
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text3);
+  font-weight: 600;
+}
+.nx-t {
+  font-family: var(--ff-h);
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 1px 0;
+  letter-spacing: -.02em;
+}
+.nx-a .nx-t { color: var(--a); }
+.nx-b .nx-t { color: var(--b); }
+.nx-f { font-size: .8rem; color: var(--text2); font-weight: 500; margin-bottom: 1px; }
+.nx-d { font-size: .7rem; color: var(--text3); margin-bottom: 4px; }
+.nx-w { font-size: .65rem; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.nx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--ff-b);
+  font-weight: 600;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: all .2s;
+  color: #fff;
+}
+.nx-a .nx-btn { background: var(--a); }
+.nx-a .nx-btn:hover { background: #6aaaaa; }
+.nx-b .nx-btn { background: var(--b); }
+.nx-b .nx-btn:hover { background: #daa55a; }
+.nx-btn:active { transform: scale(.97); }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 3px;
+  background: var(--surface);
+  border-radius: var(--rad-s);
+  box-shadow: var(--shad);
+}
+.tb {
+  flex: 1;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text3);
+  font-family: var(--ff-b);
+  font-weight: 500;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: all .2s;
+}
+.tb:hover { color: var(--text2); }
+.tb.act {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+}
+.tc { display: none; }
+.tc.act { display: block; animation: in .25s ease; }
+@keyframes in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards */
+.cd {
+  background: var(--surface);
+  border-radius: var(--rad);
+  box-shadow: var(--shad);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.cd-h {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.cd-h h2 { font-family: var(--ff-h); font-weight: 700; font-size: .9rem; }
+.cd-b { padding: 10px 14px 14px; }
+.bdg {
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.ba { background: var(--a-bg); color: var(--a); }
+.bb { background: var(--b-bg); color: var(--b); }
+
+/* Program exercise list */
+.el { display: flex; flex-direction: column; gap: 0; }
+.ei {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ei:first-child { padding-top: 0; }
+.ei:last-child { border: none; padding-bottom: 0; }
+.en {
+  font-weight: 600;
+  font-size: .82rem;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.en .n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: .6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.na { background: var(--a-bg); color: var(--a); }
+.nb { background: var(--b-bg); color: var(--b); }
+.ed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: .74rem;
+  color: var(--text2);
+  margin-top: 1px;
+}
+.ed .lb { color: var(--text3); font-size: .65rem; }
+.enote {
+  font-size: .68rem;
+  color: var(--text3);
+  margin-top: 4px;
+  padding: 5px 8px;
+  background: var(--bg);
+  border-radius: 5px;
+  border-left: 2px solid var(--line);
+  line-height: 1.5;
+}
+.prog-ind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: .72rem;
+  flex-wrap: wrap;
+  background: var(--bg);
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+.prog-ind .last { color: var(--text2); }
+.prog-ind .arr { color: var(--text3); font-size: .65rem; }
+.prog-ind .next { color: var(--ok); font-weight: 600; }
+.prog-ind .init { color: var(--text3); font-style: italic; }
+
+/* Log */
+.ls { display: flex; gap: 8px; margin-bottom: 14px; }
+.lb2 {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-s);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--ff-b);
+  font-weight: 600;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+}
+.lb2:hover { border-color: var(--border-l); }
+.ls-a { background: var(--a-bg); border-color: var(--a); color: var(--a); }
+.ls-b { background: var(--b-bg); border-color: var(--b); color: var(--b); }
+
+.ec {
+  background: var(--bg);
+  border-radius: var(--rad-s);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.ec:last-child { margin-bottom: 0; }
+.ech {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ech .nm { font-weight: 600; font-size: .82rem; }
+.ech .tg {
+  font-size: .78rem;
+  color: var(--text2);
+  background: rgba(255,255,255,0.05);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.ei2 {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+.lg { display: flex; flex-direction: column; gap: 2px; }
+.lg l {
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text3);
+  font-weight: 600;
+}
+.lg input, .lg textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--ff-b);
+  font-size: .82rem;
+  transition: all .2s;
+  outline: none;
+}
+.lg input:focus, .lg textarea:focus {
+  border-color: var(--text3);
+}
+.lg input::placeholder, .lg textarea::placeholder { color: var(--text3); opacity: .5; }
+.ww { display: flex; gap: 4px; align-items: center; }
+.ww input { flex: 1; }
+.ww .unit { font-size: .7rem; color: var(--text3); padding: 0 3px; font-weight: 500; }
+.pdc {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text3);
+  font-family: var(--ff-b);
+  font-size: .68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.pdc:hover { border-color: var(--border-l); }
+.pdc.act { background: var(--bg); color: var(--text); border-color: var(--border-l); }
+
+/* RPE row */
+.rpe-row { display: flex; gap: 4px; }
+.rpe-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text3);
+  font-family: var(--ff-b);
+  font-weight: 600;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rpe-btn:hover { border-color: var(--border-l); color: var(--text2); }
+.rpe-btn.sel { color: #fff; border-color: transparent; }
+.rpe-btn.s1.sel { background: var(--r1); }
+.rpe-btn.s2.sel { background: var(--r2); }
+.rpe-btn.s3.sel { background: var(--r3); }
+.rpe-btn.s4.sel { background: var(--r4); }
+.rpe-btn.s5.sel { background: var(--r5); }
+
+.l-sub { margin-top: 14px; }
+.l-sub button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: var(--rad-s);
+  font-family: var(--ff-b);
+  font-weight: 700;
+  font-size: .9rem;
+  cursor: pointer;
+  transition: all .2s;
+  color: #fff;
+  background: var(--cx);
+}
+.l-sub button:active { transform: scale(.98); }
+.l-sub button.sub-a { background: var(--a); }
+.l-sub button.sub-a:hover { background: #6aaaaa; }
+.l-sub button.sub-b { background: var(--b); }
+.l-sub button.sub-b:hover { background: #daa55a; }
+.l-empty { text-align: center; padding: 28px 14px; color: var(--text3); }
+
+/* Journal */
+.j-empty {
+  text-align: center;
+  padding: 40px 14px;
+  color: var(--text3);
+}
+.j-empty p { font-size: .82rem; }
+.je { margin-bottom: 10px; }
+.je:last-child { margin-bottom: 0; }
+.jh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--rad-s) var(--rad-s) 0 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.jh .lft { display: flex; align-items: center; gap: 8px; }
+.jh .jd { font-size: .78rem; font-weight: 600; }
+.jh .jt {
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.jh .jt.ha { background: var(--a-bg); color: var(--a); }
+.jh .jt.hb { background: var(--b-bg); color: var(--b); }
+.jh .h-del {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: .78rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: all .15s;
+}
+.jh .h-del:hover { color: var(--ko); background: rgba(201,74,58,.08); }
+.jb {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--rad-s) var(--rad-s);
+  overflow: hidden;
+}
+.jtbl { width: 100%; border-collapse: collapse; font-size: .74rem; }
+.jtbl th {
+  text-align: left;
+  padding: 5px 8px;
+  color: var(--text3);
+  font-weight: 600;
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+.jtbl td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.jtbl tr:last-child td { border-bottom: none; }
+.jtbl td:first-child { font-weight: 500; color: var(--text); }
+.rpe-txt { font-size: .78rem; letter-spacing: .02em; }
+
+/* Stats */
+.st-empty {
+  text-align: center;
+  padding: 40px 14px;
+  color: var(--text3);
+}
+.st-empty p { font-size: .82rem; }
+.st-cd { margin-bottom: 14px; }
+.st-cd .cd-h { padding: 10px 14px; }
+.st-cd .cd-h h2 { font-size: .82rem; }
+.st-desc {
+  font-size: .7rem;
+  color: var(--text3);
+  padding: 6px 14px 0;
+  line-height: 1.4;
+}
+.st-cd canvas { width: 100%; height: 180px; display: block; }
+.st-leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  justify-content: center;
+  padding: 4px 14px 10px;
+  font-size: .68rem;
+  color: var(--text2);
+}
+.st-leg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.st-leg .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Export */
+.exs { margin-top: 2px; }
+.ebtn {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-s);
+  background: var(--surface);
+  color: var(--text2);
+  font-family: var(--ff-b);
+  font-weight: 600;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: var(--shad);
+}
+.ebtn:hover { background: var(--surface-h); border-color: var(--border-l); color: var(--text); }
+
+/* Footer */
+.ftr { text-align: center; padding: 16px 0 6px; }
+.ftr p { font-size: .6rem; color: var(--text3); letter-spacing: .03em; margin: 0; }
+.rst-link { color: var(--text3); font-size: .55rem; text-decoration: none; cursor: pointer; opacity: .3; transition: opacity .2s; letter-spacing: .03em; }
+.rst-link:hover { opacity: .7; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.15); }
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.modal.show { opacity: 1; pointer-events: auto; }
+.modal-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+}
+.modal-c {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--rad);
+  box-shadow: var(--shad);
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  z-index: 1;
+}
+.modal-c h3 {
+  font-family: var(--ff-h);
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.modal-c p {
+  font-size: .78rem;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+.modal-c textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-s);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff-b);
+  font-size: .78rem;
+  resize: vertical;
+  outline: none;
+  min-height: 80px;
+  line-height: 1.5;
+}
+.modal-c textarea:focus { border-color: var(--text3); }
+.modal-acts { display: flex; gap: 8px; margin-top: 14px; }
+.modal-acts .ebtn { flex: 1; }
+.ebtn-p { background: var(--cx); color: #fff; border-color: var(--cx); }
+.ebtn-p:hover { background: var(--cx-h); border-color: var(--cx-h); color: #fff; }
+.ebtn-s { font-size: .72rem; }
+.ex-row { display: flex; gap: 8px; margin-top: 8px; }
+.ex-row .ebtn { flex: 1; }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .app { padding: 14px 10px 24px; }
+  .hdr h1 { font-size: 1.1rem; }
+  .nx-t { font-size: 1.6rem; }
+  .ei2 { grid-template-columns: 1fr 1fr; }
+  .tb { font-size: .72rem; padding: 7px 4px; }
+  .st-cd canvas { height: 150px; }
+}
+@media (min-width: 600px) {
+  .ei2 { grid-template-columns: 1fr 1.2fr 1.8fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="app">
+  <div class="hdr">
+    <h1>Programme Force &amp; Skills</h1>
+    <p class="sub">Juin 2026 &mdash; Recrutement myofibrillaire</p>
+  </div>
+
+  <div class="nx nx-a" id="nx">
+    <div class="nx-in">
+      <p class="nx-l">Prochaine séance</p>
+      <div class="nx-t" id="nxT">SÉANCE A</div>
+      <p class="nx-f" id="nxF"></p>
+      <p class="nx-d" id="nxD"></p>
+      <p class="nx-w" id="nxW"></p>
+      <button class="nx-btn" id="nxBtn">Saisir cette séance</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tb act" data-t="program">Programme</button>
+    <button class="tb" data-t="log">Saisir</button>
+    <button class="tb" data-t="journal">Journal</button>
+    <button class="tb" data-t="stats">Stats</button>
+  </div>
+
+  <div class="tc act" id="tP"><div id="pC"></div></div>
+  <div class="tc" id="tL"><div id="lC"></div></div>
+  <div class="tc" id="tJ"><div id="jC"></div></div>
+  <div class="tc" id="tS"><div id="sC"></div></div>
+
+  <div class="exs">
+    <button class="ebtn" id="exBtn">Exporter en CSV</button>
+    <div class="ex-row">
+      <button class="ebtn ebtn-s" id="expCodeBtn">Exporter par code</button>
+      <button class="ebtn ebtn-s" id="impCodeBtn">Importer un code</button>
+    </div>
+  </div>
+  <div class="modal" id="impModal">
+    <div class="modal-bg" id="modalBg"></div>
+    <div class="modal-c">
+      <h3>Restaurer des donn&eacute;es</h3>
+      <p>Colle le code re&ccedil;u par WhatsApp</p>
+      <textarea id="codeInput" rows="4" placeholder="Colle le code ici..."></textarea>
+      <div class="modal-acts">
+        <button class="ebtn ebtn-p" id="restoreBtn">Restaurer</button>
+        <button class="ebtn" id="modalCancel">Annuler</button>
+      </div>
+    </div>
+  </div>
+  <div class="ftr"><p>Données sauvegardées automatiquement</p><p><a class="rst-link" id="rstBtn">Tout effacer</a></p></div>
+</div>
+
+<script>
+const PR = {
+  A: {
+    label: 'Séance A',
+    focus: 'Force de Tirage & Cuisses',
+    color: 'a',
+    ex: [
+      { num: 1, name: 'Tractions lestées (Pronation)', sets: 5, reps: '4', iw: 6, rest: '3 min', note: 'Tirage explosif, menton au-dessus de la barre. Descente freinée 2s.' },
+      { num: 2, name: 'Pistol Squat Assisté (chaise)', sets: 4, reps: '5 / jambe', iw: 0, rest: '2 min 30', note: 'Main sur chaise romaine. Poussée pure sans compensation.' },
+      { num: 3, name: 'Tractions Australiennes', sets: 3, reps: '6-8', iw: 5, rest: '2 min', note: 'Rétraction scapulaire max : poitrine à la barre, serrer les omoplates.' },
+      { num: 4, name: 'Relevés de jambes suspendu', sets: 3, reps: '8-10', iw: 0, rest: '1 min 30', note: 'Mouvement ultra lent. Aucun élan ou balancier du bassin.' }
+    ]
+  },
+  B: {
+    label: 'Séance B',
+    focus: 'Force de Poussée',
+    color: 'b',
+    ex: [
+      { num: 1, name: 'Pike Push-Ups (pieds surélevés)', sets: 4, reps: '5-7', iw: 0, rest: '3 min', note: 'Pieds sur chaise. Trajectoire triangle : tête plonge en avant des mains.' },
+      { num: 2, name: 'Dips profonds (Chaise Romaine)', sets: 5, reps: '4', iw: 7, rest: '3 min', note: 'Casser la parallèle. Ne pas cambrer excessivement.' },
+      { num: 3, name: 'Pompes Déficitaires Lestées', sets: 3, reps: '6-8', iw: 5, rest: '2 min', note: 'Mains surélevées. Poitrine sous le niveau des mains.' },
+      { num: 4, name: 'Planche Hardstyle (RKC)', sets: 3, reps: '30-45s', iw: 0, rest: '1 min 30', note: 'RÉTROVERSION du bassin. Tirer les coudes vers les pieds. Aucun creux lombaire.' }
+    ]
+  }
+};
+
+const SK = 'force_v5';
+const TD = [3, 5, 0]; // Wed, Fri, Sun
+let ss = [];
+let nT = 'A';
+
+function load() {
+  try { const r = localStorage.getItem(SK); if (r) ss = JSON.parse(r); } catch (e) {}
+}
+function save() {
+  try { localStorage.setItem(SK, JSON.stringify(ss)); } catch (e) {}
+}
+
+function lastS() { return ss.length ? ss[ss.length - 1] : null; }
+
+function nextT() {
+  const l = lastS();
+  return l ? (l.t === 'A' ? 'B' : 'A') : 'A';
+}
+
+function nextD() {
+  const l = lastS();
+  const f = l ? new Date(l.d) : new Date();
+  const day = f.getDay();
+  var best = null, bestDiff = 8;
+  for (const t of TD) {
+    let d = t - day;
+    if (d <= 0) d += 7;
+    if (d < bestDiff) { bestDiff = d; best = t; }
+  }
+  const r = new Date(f);
+  r.setDate(r.getDate() + (best !== null ? bestDiff : 2));
+  return r;
+}
+
+function fdFR(d) {
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function fdISO(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function dayAbbr(d) {
+  return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()];
+}
+
+function lastW(ty, ix) {
+  const same = ss.filter(s => s.t === ty);
+  if (!same.length) return null;
+  const l = same[same.length - 1];
+  return (l.ex && l.ex[ix] && l.ex[ix].w !== undefined) ? l.ex[ix].w : null;
+}
+
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isErr ? ' ko' : ' ok');
+  requestAnimationFrame(function() {
+    el.classList.add('show');
+    setTimeout(function() { el.classList.remove('show'); }, 2200);
+  });
+}
+
+/* RENDER: Next Session */
+function rNext() {
+  nT = nextT();
+  const card = document.getElementById('nx');
+  const s = PR[nT];
+  card.className = 'nx nx-' + s.color;
+  document.getElementById('nxT').textContent = s.label.toUpperCase();
+  document.getElementById('nxF').textContent = s.focus;
+  const d = nextD();
+  const today = fdISO(new Date());
+  document.getElementById('nxD').textContent = fdFR(d) + (fdISO(d) === today ? ' (aujourd\'hui)' : '');
+  const week = Math.min(4, Math.floor(ss.length / 3) + 1);
+  document.getElementById('nxW').textContent = 'Semaine ' + week + '/4';
+}
+
+/* RENDER: Program */
+function rProg() {
+  const c = document.getElementById('pC');
+  var h = '';
+  for (var k in PR) {
+    var sec = PR[k];
+    var isA = k === 'A';
+    var bc = isA ? 'ba' : 'bb';
+    var nc = isA ? 'na' : 'nb';
+    h += '<div class="cd"><div class="cd-h"><h2>' + sec.label + '</h2><span class="bdg ' + bc + '">' + sec.focus + '</span></div><div class="cd-b"><div class="el">';
+    for (var i = 0; i < sec.ex.length; i++) {
+      var ex = sec.ex[i];
+      var wi = ex.iw > 0 ? '+' + ex.iw + ' kg' : 'PDC';
+      var lw = lastW(k, i);
+      var progHtml = '';
+      if (lw !== null) {
+        var nw = lw + 1;
+        progHtml = '<span class="prog-ind"><span class="last">Dernier : ' + (lw > 0 ? '+' + lw + ' kg' : 'PDC') + '</span> <span class="arr">&rarr;</span> <span class="next">Prochain : ' + (nw > 0 ? '+' + nw + ' kg' : 'PDC') + '</span></span>';
+      } else {
+        progHtml = '<span class="prog-ind"><span class="init">Leste initial : ' + (ex.iw > 0 ? '+' + ex.iw + ' kg' : 'PDC') + '</span></span>';
+      }
+      h += '<div class="ei"><div class="en"><span class="n ' + nc + '">' + ex.num + '</span>' + ex.name + '</div>';
+      h += '<div class="ed"><span><span class="lb">Séries</span> ' + ex.sets + '×' + ex.reps + '</span><span><span class="lb">Leste</span> ' + wi + '</span><span><span class="lb">Repos</span> ' + ex.rest + '</span></div>';
+      h += progHtml;
+      h += '<div class="enote">' + ex.note + '</div></div>';
+    }
+    h += '</div></div></div>';
+  }
+  // Warmup
+  h += '<div class="cd"><div class="cd-h"><h2>Échauffement</h2><span class="bdg ba" style="opacity:.5">10 min</span></div><div class="cd-b">';
+  h += '<div class="ei" style="border:none;padding:0"><div class="en" style="font-size:.78rem;color:var(--text2);font-weight:500"><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;font-size:.6rem;font-weight:700;background:var(--bg);color:var(--text3);align-items:center;justify-content:center;flex-shrink:0">1</span>Mobilité articulaire (3 min)</div></div>';
+  h += '<div class="ei" style="border:none;padding:5px 0 0"><div class="en" style="font-size:.78rem;color:var(--text2);font-weight:500"><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;font-size:.6rem;font-weight:700;background:var(--bg);color:var(--text3);align-items:center;justify-content:center;flex-shrink:0">2</span>Activation nerveuse (sans leste)</div><div class="ed" style="padding-left:26px"><span>2×4 Tractions explosives</span><span>2×5 Dips contrôlés</span><span>2×5 Squats</span></div></div>';
+  h += '</div></div>';
+  // Rules
+  h += '<div class="cd"><div class="cd-h"><h2>Règles de progression</h2></div><div class="cd-b" style="font-size:.78rem;color:var(--text2);line-height:1.7">';
+  h += '<p style="margin-bottom:4px"><strong style="color:var(--text)">Surcharge :</strong> Toutes les reps validées → +1 kg au prochain palier.</p>';
+  h += '<p><strong style="color:var(--text)">Stagnation :</strong> Blocage 3 séances → deload −20% une semaine.</p></div></div>';
+  c.innerHTML = h;
+}
+
+/* RENDER: Log */
+function rLog(ty) {
+  var c = document.getElementById('lC');
+  var sec = PR[ty];
+  if (!sec) { c.innerHTML = '<div class="l-empty"><p>Sélectionne une séance</p></div>'; return; }
+  var h = '<div class="ls">';
+  var types = ['A', 'B'];
+  for (var ti = 0; ti < types.length; ti++) {
+    var k = types[ti];
+    var sel = k === ty;
+    var cls = sel ? (k === 'A' ? 'lb2 ls-a' : 'lb2 ls-b') : 'lb2';
+    h += '<button class="' + cls + '" data-lt="' + k + '">' + PR[k].label + '</button>';
+  }
+  h += '</div><form id="lF">';
+  for (var i = 0; i < sec.ex.length; i++) {
+    var ex = sec.ex[i];
+    var lw = lastW(ty, i);
+    var sg = lw !== null ? lw : ex.iw;
+    var pdc = sg === 0;
+    h += '<div class="ec" data-ei="' + i + '">';
+    h += '<div class="ech"><span class="nm">' + ex.num + '. ' + ex.name + '</span><span class="tg">Objectif : ' + ex.sets + '×' + ex.reps + '</span></div>';
+    h += '<div class="ei2">';
+    h += '<div class="lg"><l>Leste</l><div class="ww"><input type="number" name="w_' + i + '" id="w_' + i + '" value="' + sg + '" min="0" step="1"><span class="unit">kg</span><button type="button" class="pdc' + (pdc ? ' act' : '') + '" data-pdc="' + i + '">PDC</button></div></div>';
+    h += '<div class="lg"><l>Réalisé</l><input type="text" name="r_' + i + '" id="r_' + i + '" placeholder="ex: 4,4,4,4,4" autocomplete="off"></div>';
+    h += '</div>';
+    h += '<div class="lg" style="margin-bottom:5px"><l>Ressenti</l><div class="rpe-row" data-rpe="' + i + '">';
+    for (var v = 1; v <= 5; v++) {
+      h += '<button type="button" class="rpe-btn s' + v + '" data-rv="' + v + '">' + v + '</button>';
+    }
+    h += '</div></div>';
+    h += '<div class="lg"><input type="text" name="n_' + i + '" id="n_' + i + '" placeholder="Note (optionnelle)" autocomplete="off"></div>';
+    h += '</div>';
+  }
+    h += '<div class="l-sub"><button type="submit" class="sub-' + ty.toLowerCase() + '">Enregistrer la séance ' + sec.label + '</button></div></form>';
+  c.innerHTML = h;
+
+  // Bind log events
+  var ltBtns = document.querySelectorAll('[data-lt]');
+  for (var bi = 0; bi < ltBtns.length; bi++) {
+    ltBtns[bi].addEventListener('click', function() {
+      var _lt = this.dataset.lt;
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() { rLog(_lt); });
+      });
+    });
+  }
+  var pdcBtns = document.querySelectorAll('.pdc');
+  for (var pi = 0; pi < pdcBtns.length; pi++) {
+    pdcBtns[pi].addEventListener('click', function() {
+      var idx = this.dataset.pdc;
+      var inp = document.getElementById('w_' + idx);
+      this.classList.toggle('act');
+      if (this.classList.contains('act')) { inp.value = 0; }
+      else { inp.value = PR[ty].ex[parseInt(idx)].iw; }
+    });
+  }
+  var rpeBtns = document.querySelectorAll('.rpe-btn');
+  for (var ri = 0; ri < rpeBtns.length; ri++) {
+    rpeBtns[ri].addEventListener('click', function() {
+      var row = this.closest('.rpe-row');
+      var btns = row.querySelectorAll('.rpe-btn');
+      for (var bj = 0; bj < btns.length; bj++) btns[bj].classList.remove('sel');
+      this.classList.add('sel');
+    });
+  }
+  document.getElementById('lF').addEventListener('submit', hLog);
+}
+
+/* HANDLER: Log submit */
+function hLog(e) {
+  e.preventDefault();
+  var typeBtn = document.querySelector('.lb2.ls-a, .lb2.ls-b');
+  var t = typeBtn ? (typeBtn.classList.contains('ls-a') ? 'A' : 'B') : nT;
+  var sec = PR[t];
+  var ex = [];
+  var ok = true;
+  var cards = document.querySelectorAll('.ec');
+  for (var ci = 0; ci < cards.length; ci++) {
+    var i = parseInt(cards[ci].dataset.ei);
+    var w = Number(document.getElementById('w_' + i).value) || 0;
+    var r = document.getElementById('r_' + i).value.trim();
+    var n = document.getElementById('n_' + i).value.trim();
+    var rpeEl = cards[ci].querySelector('.rpe-btn.sel');
+    var rpe = rpeEl ? Number(rpeEl.dataset.rv) : 0;
+    if (!r) ok = false;
+    ex.push({ w: w, r: r, n: n, rpe: rpe });
+  }
+  if (!ok) { toast('Remplis au moins "Réalisé" pour chaque exercice', true); return; }
+  for (var ei = 0; ei < ex.length; ei++) {
+    if (!ex[ei].rpe) { toast('Sélectionne un ressenti (RPE) pour chaque exercice', true); return; }
+  }
+  ss.push({ id: Date.now(), d: fdISO(new Date()), t: t, ex: ex });
+  save();
+  // Switch to journal
+  var tbs = document.querySelectorAll('.tb');
+  for (var ti = 0; ti < tbs.length; ti++) tbs[ti].classList.remove('act');
+  document.querySelector('[data-t="journal"]').classList.add('act');
+  var tcs = document.querySelectorAll('.tc');
+  for (var tci = 0; tci < tcs.length; tci++) tcs[tci].classList.remove('act');
+  document.getElementById('tJ').classList.add('act');
+  rAll();
+  toast('Séance enregistrée !');
+}
+
+/* RENDER: Journal */
+function rJ() {
+  var c = document.getElementById('jC');
+  if (!ss.length) {
+    c.innerHTML = '<div class="cd"><div class="cd-b"><div class="j-empty"><p>Aucune séance enregistrée.</p><p style="font-size:.7rem;margin-top:4px;color:var(--text3)">Va dans Saisir pour commencer !</p></div></div></div>';
+    return;
+  }
+  var sorted = [];
+  for (var si = ss.length - 1; si >= 0; si--) sorted.push(ss[si]);
+  var h = '';
+  for (var si = 0; si < sorted.length; si++) {
+    var s = sorted[si];
+    var isA = s.t === 'A';
+    var cc = isA ? 'ha' : 'hb';
+    var sec = PR[s.t];
+    var d = new Date(s.d);
+    var ds = fdFR(d);
+    h += '<div class="je"><div class="jh"><div class="lft"><span class="jd">' + ds + '</span><span class="jt ' + cc + '">' + s.t + '</span></div><button class="h-del" data-di="' + s.id + '">&#10005;</button></div><div class="jb"><table class="jtbl"><thead><tr><th>Exercice</th><th>Leste</th><th>Réalisé</th><th>RPE</th></tr></thead><tbody>';
+    for (var ei = 0; ei < sec.ex.length; ei++) {
+      var ex = sec.ex[ei];
+      var lg = (s.ex && s.ex[ei]) ? s.ex[ei] : null;
+      var w = (lg && lg.w !== undefined) ? (lg.w > 0 ? '+' + lg.w : 'PDC') : '—';
+      var r = (lg && lg.r) ? lg.r : '—';
+      var rpe = (lg && lg.rpe) ? lg.rpe : 0;
+      var rpeH = '—';
+      if (rpe) {
+        var dots = '';
+        for (var vi = 1; vi <= 5; vi++) dots += (vi <= rpe) ? '●' : '○';
+        rpeH = '<span class="rpe-txt">' + dots + ' ' + rpe + '/5</span>';
+      }
+      h += '<tr><td>' + ex.name.split(' (')[0] + '</td><td>' + w + '</td><td>' + r + '</td><td>' + rpeH + '</td></tr>';
+    }
+    h += '</tbody></table></div></div>';
+  }
+  c.innerHTML = h;
+  var delBtns = document.querySelectorAll('.h-del');
+  for (var di = 0; di < delBtns.length; di++) {
+    delBtns[di].addEventListener('click', function() {
+      var id = Number(this.dataset.di);
+      if (confirm('Supprimer cette séance ?')) {
+        var newSs = [];
+        for (var sj = 0; sj < ss.length; sj++) if (ss[sj].id !== id) newSs.push(ss[sj]);
+        ss = newSs;
+        save();
+        rAll();
+        toast('Séance supprimée');
+      }
+    });
+  }
+}
+
+/* RENDER: Stats */
+function rStats() {
+  var c = document.getElementById('sC');
+  if (ss.length < 2) {
+    c.innerHTML = '<div class="cd"><div class="cd-b"><div class="st-empty"><p>Pas assez de données pour les statistiques.</p><p style="font-size:.7rem;margin-top:4px;color:var(--text3)">Enregistre au moins 2 séances pour voir les graphiques.</p></div></div></div>';
+    return;
+  }
+  c.innerHTML =
+    '<div class="cd st-cd"><div class="cd-h"><h2>Progression des charges</h2></div><p class="st-desc">Évolution du poids utilisé par exercice au fil des séances. Chaque ligne suit un exercice lesté différent.</p><canvas id="chW"></canvas><div class="st-leg" id="legW"></div></div>' +
+    '<div class="cd st-cd"><div class="cd-h"><h2>Volume par séance</h2></div><p class="st-desc">Estimation du volume total (poids × répétitions cumulées) pour chaque séance. Plus la barre est haute, plus la charge de travail était importante.</p><canvas id="chV"></canvas></div>' +
+    '<div class="cd st-cd"><div class="cd-h"><h2>Ressenti moyen (RPE)</h2></div><p class="st-desc">Moyenne du RPE (1-5) par séance. Permet de voir si l\'intensité perçue augmente avec les charges. Bleu = Séance A, Cuivre = Séance B.</p><canvas id="chR"></canvas></div>';
+  requestAnimationFrame(function() { drawW(); drawV(); drawR(); });
+}
+
+function setupC(id) {
+  var c = document.getElementById(id);
+  var r = c.getBoundingClientRect();
+  var d = window.devicePixelRatio || 1;
+  c.width = r.width * d;
+  c.height = r.height * d;
+  var ctx = c.getContext('2d');
+  ctx.scale(d, d);
+  ctx.clearRect(0, 0, r.width, r.height);
+  return { ctx: ctx, c: c, r: r };
+}
+
+function drawW() {
+  var o = setupC('chW');
+  var ctx = o.ctx, W = o.r.width, H = o.r.height;
+  var pad = 36, padR = 12, padT = 16, padB = 22;
+  var cw = W - pad - padR, ch = H - padT - padB;
+
+  var series = [
+    { name: 'Tractions', key: 'A', idx: 0, color: '#5a9aaa' },
+    { name: 'Australiennes', key: 'A', idx: 2, color: '#7aaab0' },
+    { name: 'Dips', key: 'B', idx: 1, color: '#c99550' },
+    { name: 'Pompes', key: 'B', idx: 3, color: '#d4a878' }
+  ];
+
+  var data = [];
+  for (var si = 0; si < series.length; si++) {
+    var s = series[si];
+    var pts = [];
+    for (var sj = 0; sj < ss.length; sj++) {
+      if (ss[sj].t === s.key && ss[sj].ex && ss[sj].ex[s.idx] && ss[sj].ex[s.idx].w > 0) {
+        pts.push({ d: ss[sj].d, v: ss[sj].ex[s.idx].w });
+      }
+    }
+    data.push({ name: s.name, color: s.color, pts: pts });
+  }
+
+  var allPts = [];
+  for (var di = 0; di < data.length; di++) {
+    for (var pj = 0; pj < data[di].pts.length; pj++) allPts.push(data[di].pts[pj]);
+  }
+  if (!allPts.length) {
+    ctx.fillStyle = '#8a8498'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('Aucune donnée de charge', W / 2, H / 2); return;
+  }
+
+  var allDates = [];
+  var dateMap = {};
+  for (var pi = 0; pi < allPts.length; pi++) {
+    if (!dateMap[allPts[pi].d]) { dateMap[allPts[pi].d] = true; allDates.push(allPts[pi].d); }
+  }
+  allDates.sort();
+  var xMap = {};
+  for (var di = 0; di < allDates.length; di++) xMap[allDates[di]] = di;
+
+  var maxW = 0;
+  for (var pi = 0; pi < allPts.length; pi++) if (allPts[pi].v > maxW) maxW = allPts[pi].v;
+  maxW += 2;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, padT); ctx.lineTo(pad, H - padB); ctx.lineTo(W - padR, H - padB); ctx.stroke();
+
+  ctx.fillStyle = '#8a8498'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
+  for (var w = 0; w <= maxW; w += 2) {
+    var y = padT + ch - (w / maxW) * ch;
+    ctx.fillText(w + 'kg', pad - 4, y + 3);
+  }
+
+  ctx.textAlign = 'center';
+  for (var di = 0; di < allDates.length; di++) {
+    if (di % Math.max(1, Math.floor(allDates.length / 5)) === 0 || di === allDates.length - 1) {
+      ctx.fillStyle = '#8a8498'; ctx.font = '8px Inter';
+      ctx.fillText(allDates[di].slice(5), pad + (di / (allDates.length - 1 || 1)) * cw, H - padB + 12);
+    }
+  }
+
+  // Lines
+  for (var si = 0; si < data.length; si++) {
+    var d = data[si];
+    if (!d.pts.length) continue;
+    d.pts.sort(function(a, b) { return a.d.localeCompare(b.d); });
+    ctx.strokeStyle = d.color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var pi = 0; pi < d.pts.length; pi++) {
+      var x = pad + (xMap[d.pts[pi].d] / (allDates.length - 1 || 1)) * cw;
+      var y = padT + ch - (d.pts[pi].v / maxW) * ch;
+      if (pi === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    for (var pi = 0; pi < d.pts.length; pi++) {
+      var x = pad + (xMap[d.pts[pi].d] / (allDates.length - 1 || 1)) * cw;
+      var y = padT + ch - (d.pts[pi].v / maxW) * ch;
+      ctx.fillStyle = d.color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+
+  var leg = document.getElementById('legW');
+  var legHtml = '';
+  for (var si = 0; si < data.length; si++) {
+    if (!data[si].pts.length) continue;
+    legHtml += '<span><span class="dot" style="background:' + data[si].color + '"></span>' + data[si].name + ' (' + data[si].pts.length + ' séances)</span>';
+  }
+  leg.innerHTML = legHtml;
+}
+
+function drawV() {
+  var o = setupC('chV');
+  var ctx = o.ctx, W = o.r.width, H = o.r.height;
+  var pad = 36, padR = 12, padT = 16, padB = 22;
+  var cw = W - pad - padR, ch = H - padT - padB;
+
+  var vols = [];
+  var vsort = ss.slice().sort(function(a, b) { return a.d.localeCompare(b.d); });
+  for (var si = 0; si < vsort.length; si++) {
+    var s = vsort[si];
+    var sec = PR[s.t];
+    var vol = 0;
+    for (var ei = 0; ei < sec.ex.length; ei++) {
+      var lg = (s.ex && s.ex[ei]) ? s.ex[ei] : null;
+      if (lg && lg.w > 0 && lg.r) {
+        var parts = lg.r.split(/[,;\/\s]+/);
+        var sum = 0;
+        for (var pj = 0; pj < parts.length; pj++) sum += parseInt(parts[pj]) || 0;
+        vol += sum * lg.w;
+      }
+    }
+    if (vol > 0) vols.push({ d: s.d, v: vol, t: s.t });
+  }
+  if (!vols.length) {
+    ctx.fillStyle = '#8a8498'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('Aucune donnée de volume', W / 2, H / 2); return;
+  }
+  var maxV = 0;
+  for (var vi = 0; vi < vols.length; vi++) if (vols[vi].v > maxV) maxV = vols[vi].v;
+  maxV *= 1.1;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, padT); ctx.lineTo(pad, H - padB); ctx.lineTo(W - padR, H - padB); ctx.stroke();
+
+  ctx.fillStyle = '#8a8498'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
+  var step = Math.max(1, Math.round(maxV / 4 / 10) * 10);
+  for (var v = 0; v <= maxV; v += step) {
+    ctx.fillText(v, pad - 4, padT + ch - (v / maxV) * ch + 3);
+  }
+
+  var bw = Math.min(cw / vols.length * 0.7, 28);
+  for (var vi = 0; vi < vols.length; vi++) {
+    var x = pad + (vi + 0.5) * (cw / vols.length) - bw / 2;
+    var h = (vols[vi].v / maxV) * ch;
+    ctx.fillStyle = vols[vi].t === 'A' ? 'rgba(90,154,170,0.75)' : 'rgba(201,149,80,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(x, padT + ch - h, bw, h, 3);
+    ctx.fill();
+  }
+
+  ctx.textAlign = 'center'; ctx.fillStyle = '#8a8498'; ctx.font = '7px Inter';
+  for (var vi = 0; vi < vols.length; vi++) {
+    ctx.fillText(vols[vi].d.slice(5), pad + (vi + 0.5) * (cw / vols.length), H - padB + 12);
+  }
+}
+
+function drawR() {
+  var o = setupC('chR');
+  var ctx = o.ctx, W = o.r.width, H = o.r.height;
+  var pad = 36, padR = 12, padT = 16, padB = 22;
+  var cw = W - pad - padR, ch = H - padT - padB;
+
+  var rpes = [];
+  var rsort = ss.slice().sort(function(a, b) { return a.d.localeCompare(b.d); });
+  for (var si = 0; si < rsort.length; si++) {
+    var s = rsort[si];
+    if (!s.ex) continue;
+    var vals = [];
+    for (var ei = 0; ei < s.ex.length; ei++) {
+      if (s.ex[ei] && s.ex[ei].rpe) vals.push(s.ex[ei].rpe);
+    }
+    if (vals.length) {
+      var sum = 0;
+      for (var vj = 0; vj < vals.length; vj++) sum += vals[vj];
+      rpes.push({ d: s.d, v: sum / vals.length, t: s.t });
+    }
+  }
+  if (!rpes.length) {
+    ctx.fillStyle = '#8a8498'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('Aucune donnée RPE', W / 2, H / 2); return;
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, padT); ctx.lineTo(pad, H - padB); ctx.lineTo(W - padR, H - padB); ctx.stroke();
+
+  ctx.fillStyle = '#8a8498'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
+  for (var v = 1; v <= 5; v++) {
+    var y = padT + ch - ((v - 1) / 4) * ch;
+    ctx.fillText(v, pad - 4, y + 3);
+  }
+
+  // Separate A and B
+  var sA = [], sB = [];
+  for (var ri = 0; ri < rpes.length; ri++) {
+    if (rpes[ri].t === 'A') sA.push(rpes[ri]); else sB.push(rpes[ri]);
+  }
+  var sets = [sA, sB];
+  var cols = ['#5a9aaa', '#c99550'];
+  for (var si = 0; si < 2; si++) {
+    var arr = sets[si];
+    if (!arr.length) continue;
+    ctx.strokeStyle = cols[si]; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var pi = 0; pi < arr.length; pi++) {
+      var x = pad + (pi + 0.5) * (cw / arr.length);
+      var y = padT + ch - ((arr[pi].v - 1) / 4) * ch;
+      if (pi === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    for (var pi = 0; pi < arr.length; pi++) {
+      var x = pad + (pi + 0.5) * (cw / arr.length);
+      var y = padT + ch - ((arr[pi].v - 1) / 4) * ch;
+      ctx.fillStyle = cols[si]; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+
+  ctx.textAlign = 'center'; ctx.fillStyle = '#8a8498'; ctx.font = '7px Inter';
+  for (var ri = 0; ri < rpes.length; ri++) {
+    ctx.fillText(rpes[ri].d.slice(5), pad + (ri + 0.5) * (cw / rpes.length), H - padB + 12);
+  }
+}
+
+/* EXPORT CSV */
+function expCSV() {
+  if (!ss.length) { toast('Aucune séance à exporter', true); return; }
+  var BOM = '\uFEFF';
+  var hd = ['Date','Jour','Séance','Tractions','Dips','Pistol','Pompes','Australiennes','LegRaises','Pike','Planche','Notes'];
+  var csv = BOM + hd.join(';') + '\n';
+  for (var si = 0; si < ss.length; si++) {
+    var s = ss[si];
+    // Tractions: A[0] weight, Dips: B[1] weight, Pistol: A[1] reps, Pompes: B[2] weight
+    // Australiennes: A[2] reps, LegRaises: A[3] reps, Pike: B[0] reps, Planche: B[3] duration/seconds
+    var tractions = '', dips = '', pistol = '', pompes = '', austral = '', legR = '', pike = '', planche = '', notes = '';
+
+    if (s.t === 'A') {
+      if (s.ex[0] && s.ex[0].w !== undefined) tractions = s.ex[0].w > 0 ? '' + s.ex[0].w : '';
+      if (s.ex[1] && s.ex[1].r) pistol = s.ex[1].r;
+      if (s.ex[2] && s.ex[2].r) austral = s.ex[2].r;
+      if (s.ex[3] && s.ex[3].r) legR = s.ex[3].r;
+    } else {
+      if (s.ex[1] && s.ex[1].w !== undefined) dips = s.ex[1].w > 0 ? '' + s.ex[1].w : '';
+      if (s.ex[2] && s.ex[2].w !== undefined) pompes = s.ex[2].w > 0 ? '' + s.ex[2].w : '';
+      if (s.ex[0] && s.ex[0].r) pike = s.ex[0].r;
+      if (s.ex[3] && s.ex[3].r) planche = s.ex[3].r;
+    }
+
+    // Collect notes
+    var noteParts = [];
+    if (s.ex) {
+      for (var ei = 0; ei < s.ex.length; ei++) {
+        if (s.ex[ei] && s.ex[ei].n) noteParts.push(s.ex[ei].n);
+      }
+    }
+    notes = noteParts.join(' / ');
+
+    var d = new Date(s.d);
+    var row = [s.d, dayAbbr(d), s.t, tractions, dips, pistol, pompes, austral, legR, pike, planche, notes];
+    csv += row.join(';') + '\n';
+  }
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'Suivi_Force.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exporté !');
+}
+
+/* RENDER ALL */
+function rAll() {
+  rNext(); rProg(); rJ();
+  var lt = document.getElementById('tL');
+  if (lt.classList.contains('act')) rLog(nT);
+  var st = document.getElementById('tS');
+  if (st.classList.contains('act')) rStats();
+}
+
+/* TABS */
+function initT() {
+  var tbs = document.querySelectorAll('.tb');
+  var tabMap = { program: 'tP', log: 'tL', journal: 'tJ', stats: 'tS' };
+  for (var ti = 0; ti < tbs.length; ti++) {
+    tbs[ti].addEventListener('click', function() {
+      var tbs2 = document.querySelectorAll('.tb');
+      for (var tj = 0; tj < tbs2.length; tj++) tbs2[tj].classList.remove('act');
+      this.classList.add('act');
+      var tcs = document.querySelectorAll('.tc');
+      for (var tk = 0; tk < tcs.length; tk++) tcs[tk].classList.remove('act');
+      document.getElementById(tabMap[this.dataset.t]).classList.add('act');
+      if (this.dataset.t === 'log') rLog(nT);
+      if (this.dataset.t === 'journal') rJ();
+      if (this.dataset.t === 'stats') rStats();
+    });
+  }
+  document.getElementById('nxBtn').addEventListener('click', function() {
+    var tbs2 = document.querySelectorAll('.tb');
+    for (var ti = 0; ti < tbs2.length; ti++) tbs2[ti].classList.remove('act');
+    document.querySelector('[data-t="log"]').classList.add('act');
+    var tcs = document.querySelectorAll('.tc');
+    for (var ti = 0; ti < tcs.length; ti++) tcs[ti].classList.remove('act');
+    document.getElementById('tL').classList.add('act');
+    rLog(nT);
+  });
+}
+
+// Init
+load();
+nT = nextT();
+rAll();
+initT();
+document.getElementById('rstBtn').addEventListener('click', function() {
+  if (confirm('Tout effacer ? Cette action est irréversible.') && confirm('Confirmer la suppression de toutes les données ?')) {
+    localStorage.removeItem(SK); ss = []; rAll();
+    document.querySelector('.tb.act').classList.remove('act');
+    document.querySelector('[data-t="program"]').classList.add('act');
+    document.querySelector('.tc.act').classList.remove('act');
+    document.getElementById('tP').classList.add('act');
+    toast('Données effacées');
+  }
+});
+document.getElementById('exBtn').addEventListener('click', expCSV);
+
+/* Export by code */
+function expCode() {
+  if (!ss.length) { toast('Aucune séance à exporter', true); return; }
+  try {
+    var json = JSON.stringify(ss);
+    var code = btoa(unescape(encodeURIComponent(json)));
+    navigator.clipboard.writeText(code).then(function() {
+      toast('Code copié ! Envoie-le par WhatsApp');
+    }, function() {
+      var ta = document.createElement('textarea');
+      ta.value = code;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Code copié ! Envoie-le par WhatsApp');
+    });
+  } catch(e) {
+    toast("Erreur lors de l'export", true);
+  }
+}
+
+/* Import by code */
+function impCode() {
+  var ta = document.getElementById('codeInput');
+  var code = ta.value.trim();
+  if (!code) { toast('Colle d\'abord un code', true); return; }
+  try {
+    var json = decodeURIComponent(escape(atob(code)));
+    var data = JSON.parse(json);
+    if (Array.isArray(data)) {
+      if (data.length === 0) { toast('Aucune séance dans ce code', true); return; }
+      ss = data;
+      save();
+      closeModal();
+      rAll();
+      toast('Données restaurées ! ' + ss.length + ' séances');
+    } else {
+      toast('Code invalide', true);
+    }
+  } catch(e) {
+    toast('Code invalide : vérifie la copie', true);
+  }
+}
+
+function openModal() {
+  document.getElementById('impModal').classList.add('show');
+  document.getElementById('codeInput').value = '';
+  document.getElementById('codeInput').focus();
+}
+
+function closeModal() {
+  document.getElementById('impModal').classList.remove('show');
+}
+
+document.getElementById('expCodeBtn').addEventListener('click', expCode);
+document.getElementById('impCodeBtn').addEventListener('click', openModal);
+document.getElementById('restoreBtn').addEventListener('click', impCode);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalBg').addEventListener('click', closeModal);
+document.getElementById('codeInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.ctrlKey) impCode();
+});
+
+/* Register service worker */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+</script>
+</body>
+</html>
