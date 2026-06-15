@@ -1,6 +1,15 @@
-const CACHE = 'force-v1';
+const CACHE = 'force-v2';
 const URLS = [
   'index.html',
+  'css/style.css',
+  'js/data.js',
+  'js/badges.js',
+  'js/chrono.js',
+  'js/log.js',
+  'js/journal.js',
+  'js/stats.js',
+  'js/export.js',
+  'js/app.js',
   'manifest.json',
   'icon.svg'
 ];

@@ -1,13 +1,14 @@
 {
   "name": "Programme Force & Skills",
   "short_name": "Force",
-  "description": "Suivi de programme force et calisthénie",
+  "description": "Suivi de programme force et calisthénie avec chrono",
   "start_url": "index.html",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#2a2a35",
-  "theme_color": "#2a2a35",
+  "background_color": "#1e1e28",
+  "theme_color": "#1e1e28",
   "orientation": "portrait",
+  "categories": ["fitness", "health", "sports"],
   "icons": [
     {
       "src": "icon.svg",
