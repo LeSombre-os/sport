@@ -1,4 +1,4 @@
-const CACHE = 'force-v2';
+const CACHE = 'force-v3';
 const URLS = [
   'index.html',
   'css/style.css',
@@ -11,7 +11,9 @@ const URLS = [
   'js/export.js',
   'js/app.js',
   'manifest.json',
-  'icon.svg'
+  'icon.svg',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 self.addEventListener('install', function(e) {
