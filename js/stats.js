@@ -157,9 +157,12 @@ function drawV() {
     sec.ex.forEach((_, ei) => {
       const lg = getExLog(s, ei);
       if (lg && lg.weight > 0 && lg.performed) {
-        const parts = lg.performed.split(/[,;/\s]+/);
+        const parts = lg.performed.split(',').filter(p => p.trim());
         let sum = 0;
-        parts.forEach(p => sum += parseInt(p) || 0);
+        parts.forEach(p => {
+          const val = parseInt(p.trim());
+          if (!isNaN(val)) sum += val;
+        });
         vol += sum * lg.weight;
       }
     });

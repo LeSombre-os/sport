@@ -165,8 +165,8 @@ function initApp() {
       ss = [];
       userStats = { totalWorkouts: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: '', badges: [] };
       switchTab('program');
-  renderAll();
-  renderSettingsBadges();
+      renderAll();
+      renderSettingsBadges();
       toast('Données effacées');
     }
   });
@@ -178,7 +178,9 @@ function initApp() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.error('Erreur SW :', err);
+      });
     });
   }
 }

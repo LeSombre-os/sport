@@ -344,7 +344,6 @@ function hLog(ty) {
   } else {
     ss.push({ id: Date.now(), d: dateKey, t: t, ex: ex });
   }
-  save();
   clearFormSession();
   updateStreak();
   const newBadges = checkBadges();

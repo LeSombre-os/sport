@@ -69,9 +69,9 @@ function parseCSV(text) {
 function serializeCSV(rows) {
   return rows.map(row =>
     row.map(cell => {
-      if (/[",;\n\r]/.test(cell)) return '"' + cell.replace(/"/g, '""') + '"';
+      if (/[",\n\r]/.test(cell)) return '"' + cell.replace(/"/g, '""') + '"';
       return cell;
-    }).join(';')
+    }).join(',')
   ).join('\n');
 }
 
@@ -215,6 +215,12 @@ function impCode() {
     const json = decodeURIComponent(escape(atob(code)));
     const data = JSON.parse(json);
     if (Array.isArray(data) && data.length) {
+      const valid = data.every(s =>
+        s.d && /^\d{4}-\d{2}-\d{2}$/.test(s.d) &&
+        ['A', 'B'].includes(s.t) &&
+        Array.isArray(s.ex)
+      );
+      if (!valid) { toast('Code corrompu ou invalide', true); return; }
       ss = data.sort((a, b) => a.d.localeCompare(b.d));
       save();
       updateStreak();

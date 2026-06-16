@@ -121,19 +121,12 @@ function save() {
 
 function completedSessions() { return ss.filter(s => !s.skipped); }
 
+function autoCompleted() {
+  return ss.filter(s => !s.skipped && !s.manual);
+}
+
 function getProgramWeek(dateStr) {
-  const cc = completedSessions();
-  let ref;
-  if (cc.length) {
-    const sorted = [...cc].sort((a, b) => a.d.localeCompare(b.d));
-    const first = new Date(sorted[0].d);
-    const day = first.getDay();
-    const snap = day === 0 ? -6 : 1 - day;
-    first.setDate(first.getDate() + snap);
-    ref = first;
-  } else {
-    ref = new Date(2026, 5, 1);
-  }
+  const ref = new Date(2026, 5, 1);
   const d = new Date(dateStr);
   const diff = Math.floor((d - ref) / (7 * 86400000));
   return diff + 1;
@@ -153,7 +146,8 @@ function getSessionForDate(dateStr) {
 }
 
 function lastSession() {
-  const all = [...ss].sort((a, b) => b.d.localeCompare(a.d));
+  const filtered = ss.filter(s => !s.manual);
+  const all = [...filtered].sort((a, b) => b.d.localeCompare(a.d));
   return all.length ? all[0] : null;
 }
 
@@ -164,7 +158,7 @@ function nextT() {
     d.setDate(today.getDate() + i);
     if (!TD.includes(d.getDay())) continue;
     const dStr = fdISO(d);
-    if (ss.some(s => s.d === dStr)) continue;
+    if (ss.some(s => !s.manual && s.d === dStr)) continue;
     const expected = getSessionForDate(dStr);
     if (!expected) continue;
     return expected;
@@ -180,7 +174,7 @@ function nextD() {
     d.setDate(today.getDate() + i);
     if (!TD.includes(d.getDay())) continue;
     const dStr = fdISO(d);
-    if (ss.some(s => s.d === dStr)) continue;
+    if (ss.some(s => !s.manual && s.d === dStr)) continue;
     const expected = getSessionForDate(dStr);
     if (!expected) continue;
     return d;

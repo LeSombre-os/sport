@@ -308,12 +308,11 @@ function saveManualLog() {
   const existing = ss.findIndex(s => s.d === dateStr);
   if (existing !== -1) {
     const prevType = ss[existing].t;
-    ss[existing] = { id: Date.now(), d: dateStr, t: manualType, ex: ex };
+    ss[existing] = { id: Date.now(), d: dateStr, t: manualType, ex: ex, manual: true };
     if (prevType !== manualType) toast('Remplace la séance ' + prevType + ' par ' + manualType + ' sur ce jour', false);
   } else {
-    ss.push({ id: Date.now(), d: dateStr, t: manualType, ex: ex });
+    ss.push({ id: Date.now(), d: dateStr, t: manualType, ex: ex, manual: true });
   }
-  save();
   updateStreak();
   checkBadges();
   save();
