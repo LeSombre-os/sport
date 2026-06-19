@@ -20,6 +20,7 @@ function saveFormSession(ty) {
       note: n ? n.value.trim() : ''
     };
   });
+  cache.currentExoIndex = currentExoIndex;
   formCache = cache;
   try { sessionStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
 }
@@ -65,6 +66,27 @@ function restoreFormSession(ty) {
 function clearFormSession() {
   formCache = null;
   try { sessionStorage.removeItem(FORM_KEY); } catch (e) {}
+  if (typeof clearChronoState === 'function') clearChronoState();
+}
+
+function editExistingSession(session) {
+  editingLog = JSON.parse(JSON.stringify(session));
+  nT = session.t;
+  const cache = { sessionId: session.t, lastUpdated: Date.now(), exercises: {} };
+  if (session.ex) {
+    session.ex.forEach((e, i) => {
+      cache.exercises[i] = {
+        weight: e.weight || 0,
+        performed: e.performed || '',
+        rpe: e.rpe || 0,
+        note: e.note || ''
+      };
+    });
+  }
+  formCache = cache;
+  try { sessionStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  switchTab('log');
+  rLog(session.t);
 }
 
 function getSetValues(exIdx, ty) {
@@ -103,7 +125,7 @@ function repColor(inp, ex, si) {
     inp.classList.add('empty');
     return;
   }
-  const target = parseInt(ex.reps);
+  const target = parseRepTarget(ex.reps);
   if (!target || target === 0) {
     inp.classList.remove('empty', 'mid', 'low');
     inp.classList.add('filled');
@@ -126,7 +148,6 @@ function repColor(inp, ex, si) {
 function rLog(ty) {
   nT = ty;
   currentExoIndex = 0;
-  editingLog = null;
   const c = document.getElementById('lC');
   const sec = PR[ty];
   if (!sec) { c.innerHTML = '<div class="l-empty">Sélectionne une séance</div>'; return; }
@@ -139,6 +160,9 @@ function rLog(ty) {
   h += '</div>';
   c.innerHTML = h;
 
+  const savedIdx = getSavedExoIndex(ty);
+  if (savedIdx !== null) currentExoIndex = savedIdx;
+
   renderExo(ty, currentExoIndex);
 
   document.getElementById('prevExo').addEventListener('click', () => {
@@ -149,6 +173,17 @@ function rLog(ty) {
   attachNextHandler(ty);
 
   restoreFormSession(ty);
+}
+
+function getSavedExoIndex(ty) {
+  try {
+    const raw = sessionStorage.getItem(FORM_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.sessionId !== ty) return null;
+    if (data.currentExoIndex !== undefined && data.currentExoIndex > 0) return data.currentExoIndex;
+  } catch (e) {}
+  return null;
 }
 
 function attachNextHandler(ty) {
@@ -195,7 +230,8 @@ function renderExo(ty, idx) {
   document.getElementById('nextExo').textContent = idx === sec.ex.length - 1 ? 'Récap ▶' : 'Suivant ▶';
 
   const lw = lastW(ty, idx);
-  const sg = lw !== null ? lw : ex.iw;
+  const pw = getProposedWeight(ty, idx);
+  const sg = lw !== null ? pw : ex.iw;
   const pdc = sg === 0;
 
   let h = '';
@@ -235,14 +271,20 @@ function renderExo(ty, idx) {
         attachNextHandler(ty);
       }, ty);
     }
-  });
+  }, idx);
 
   document.querySelectorAll('.pdc').forEach(b => {
     b.addEventListener('click', function() {
       const i = this.dataset.pdc;
       const inp = document.getElementById('w_' + i);
+      const wasAct = this.classList.contains('act');
+      if (!wasAct) {
+        this.dataset.prevWeight = inp.value;
+        inp.value = 0;
+      } else {
+        inp.value = this.dataset.prevWeight !== undefined ? this.dataset.prevWeight : PR[ty].ex[parseInt(i)].iw;
+      }
       this.classList.toggle('act');
-      inp.value = this.classList.contains('act') ? 0 : PR[ty].ex[parseInt(i)].iw;
       saveFormSession(ty);
     });
   });
@@ -335,16 +377,17 @@ function hLog(ty) {
 
   if (!ok) { toast('Remplis "Réalisé" et le RPE pour chaque exercice', true); return; }
 
-  const dateKey = fdISO(new Date());
+  const dateKey = editingLog ? editingLog.d : fdISO(new Date());
   const existing = ss.findIndex(s => s.d === dateKey);
   if (existing !== -1) {
     const prevType = ss[existing].t;
-    ss[existing] = { id: Date.now(), d: dateKey, t: t, ex: ex };
+    ss[existing] = { ...(editingLog || {}), d: dateKey, t: t, ex: ex };
     if (prevType !== t) toast('Remplace la séance ' + prevType + ' par ' + t + ' sur ce jour', false);
   } else {
     ss.push({ id: Date.now(), d: dateKey, t: t, ex: ex });
   }
   clearFormSession();
+  editingLog = null;
   updateStreak();
   const newBadges = checkBadges();
   save();

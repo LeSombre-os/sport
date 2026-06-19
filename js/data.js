@@ -193,6 +193,49 @@ function nextD() {
   return r;
 }
 
+function parseRepTarget(repsStr) {
+  if (!repsStr) return 0;
+  const cleaned = repsStr.replace(/\([^)]*\)/g, '').replace(/s\b/g, '').trim();
+  const nums = cleaned.match(/\d+/g);
+  if (!nums) return 0;
+  const parsed = nums.map(Number);
+  if (parsed.length === 1) return parsed[0];
+  return Math.ceil((parsed[0] + parsed[1]) / 2);
+}
+
+function allSetsHitTarget(exDef, performed) {
+  if (!performed) return false;
+  const reps = performed.split(',');
+  const target = parseRepTarget(exDef.reps);
+  return reps.every(r => parseInt(r.trim()) >= target);
+}
+
+function getConsecutiveSuccessCount(ty, ei) {
+  const same = completedSessions()
+    .filter(s => s.t === ty)
+    .sort((a, b) => b.d.localeCompare(a.d));
+  const exDef = PR[ty]?.ex[ei];
+  if (!exDef) return 0;
+  let count = 0;
+  for (const session of same) {
+    const lg = getExLog(session, ei);
+    if (!lg) break;
+    if (allSetsHitTarget(exDef, lg.performed)) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
+}
+
+function getProposedWeight(ty, ei) {
+  const lw = lastW(ty, ei);
+  if (lw === null) return PR[ty]?.ex[ei]?.iw ?? 0;
+  const bonus = getConsecutiveSuccessCount(ty, ei);
+  return lw + bonus;
+}
+
 function getExLog(s, ei) {
   if (!s || !s.ex) return null;
   return s.ex.find(e => e && e.ei === ei) || s.ex[ei] || null;

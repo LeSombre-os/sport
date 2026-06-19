@@ -111,6 +111,7 @@ function renderSessionList(filtered) {
     if (!isOpen && !isSkipped) h += '<span class="jh-summary">' + doneCount + '/' + sec.ex.length + ' exos</span>';
     if (isSkipped) h += '<span class="jh-skip-label">Passée</span>';
     h += '<span class="jh-arrow">' + (isOpen ? '▲' : '▼') + '</span>';
+    h += '<button class="h-edit" data-ei="' + s.id + '">✏️</button>';
     h += '<button class="h-del" data-di="' + s.id + '">✕</button>';
     h += '</div></div>';
 
@@ -161,7 +162,7 @@ function renderSessionList(filtered) {
 function attachJournalEvents() {
   document.querySelectorAll('.je-toggle').forEach(el => {
     el.addEventListener('click', function(e) {
-      if (e.target.closest('.h-del')) return;
+      if (e.target.closest('.h-del') || e.target.closest('.h-edit')) return;
       const card = this.closest('.je');
       if (!card) return;
       const sid = Number(card.dataset.sid);
@@ -209,6 +210,15 @@ function attachJournalEvents() {
   document.getElementById('jLessBtn')?.addEventListener('click', () => {
     journalShowAll = false;
     rJ();
+  });
+
+  document.querySelectorAll('.h-edit').forEach(b => {
+    b.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = Number(this.dataset.ei);
+      const session = ss.find(s => s.id === id);
+      if (session) editExistingSession(session);
+    });
   });
 
   document.querySelectorAll('.h-del').forEach(b => {

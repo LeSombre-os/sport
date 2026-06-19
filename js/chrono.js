@@ -2,18 +2,121 @@ let chronoInterval = null;
 let chronoRemaining = 0;
 let chronoTotal = 0;
 let chronoRunning = false;
+let chronoVisibilitySetup = false;
+const CHRONO_KEY = 'force_chrono_v1';
 
-function initChrono(container, totalSeconds, sessionType, onDone) {
+let chronoSessionType = '';
+let chronoExoIndex = -1;
+
+function saveChronoState() {
+  try {
+    sessionStorage.setItem(CHRONO_KEY, JSON.stringify({
+      remaining: chronoRemaining,
+      total: chronoTotal,
+      running: chronoRunning,
+      sessionType: chronoSessionType,
+      exoIndex: chronoExoIndex,
+      timestamp: Date.now()
+    }));
+  } catch (e) {}
+}
+
+function clearChronoState() {
+  try { sessionStorage.removeItem(CHRONO_KEY); } catch (e) {}
+}
+
+function restoreChronoState(totalSeconds, sessionType, exoIndex) {
+  try {
+    const raw = sessionStorage.getItem(CHRONO_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.total !== totalSeconds) return null;
+    if (data.sessionType !== sessionType) return null;
+    if (data.exoIndex !== exoIndex) return null;
+    if (data.running) {
+      const elapsed = Math.floor((Date.now() - data.timestamp) / 1000);
+      data.remaining = Math.max(0, data.remaining - elapsed);
+    }
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setupChronoVisibilityHandlers(totalSeconds, disp, playBtn, colorClass, onDone) {
+  if (chronoVisibilitySetup) return;
+  chronoVisibilitySetup = true;
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (chronoRunning) saveChronoState();
+    } else {
+      const restored = restoreChronoState(totalSeconds, chronoSessionType, chronoExoIndex);
+      if (restored && restored.total === chronoTotal) {
+        if (restored.remaining !== chronoRemaining) {
+          chronoRemaining = restored.remaining;
+          disp.textContent = fmtTime(chronoRemaining);
+          if (chronoRemaining <= 0) {
+            if (chronoInterval) { clearInterval(chronoInterval); chronoInterval = null; }
+            chronoRunning = false;
+            disp.textContent = '0:00';
+            disp.className = 'chrono-display done';
+            playBtn.textContent = '✓ Fini';
+            playBtn.className = 'chrono-btn reset';
+            try { navigator.vibrate(200); } catch (e) {}
+            if (onDone) onDone();
+          } else if (chronoRemaining <= 5) {
+            disp.className = 'chrono-display alert';
+          }
+        }
+        if (restored.running && !chronoRunning && chronoRemaining > 0) {
+          chronoRunning = true;
+          playBtn.textContent = '⏸ Pause';
+          playBtn.className = 'chrono-btn pause ' + colorClass;
+          disp.classList.add('running');
+          if (chronoInterval) { clearInterval(chronoInterval); }
+          chronoInterval = setInterval(() => {
+            chronoRemaining--;
+            disp.textContent = fmtTime(chronoRemaining);
+            if (chronoRemaining <= 5 && chronoRemaining > 0) {
+              disp.className = 'chrono-display alert';
+            }
+            if (chronoRemaining <= 0) {
+              clearInterval(chronoInterval);
+              chronoInterval = null;
+              chronoRunning = false;
+              disp.textContent = '0:00';
+              disp.className = 'chrono-display done';
+              playBtn.textContent = '✓ Fini';
+              playBtn.className = 'chrono-btn reset';
+              clearChronoState();
+              try { navigator.vibrate(200); } catch (e) {}
+              if (onDone) onDone();
+            }
+          }, 1000);
+        }
+      }
+    }
+  });
+}
+
+function initChrono(container, totalSeconds, sessionType, onDone, exoIndex) {
   const colorClass = sessionType === 'B' ? 'play-b' : 'play-a';
-  chronoRemaining = totalSeconds;
   chronoTotal = totalSeconds;
-  chronoRunning = false;
+  chronoSessionType = sessionType;
+  chronoExoIndex = exoIndex !== undefined ? exoIndex : -1;
+
+  const restored = restoreChronoState(totalSeconds, chronoSessionType, chronoExoIndex);
+  chronoRemaining = restored ? restored.remaining : totalSeconds;
+  chronoRunning = restored ? restored.running : false;
+  if (restored) clearChronoState();
+
   if (chronoInterval) { clearInterval(chronoInterval); chronoInterval = null; }
 
   container.innerHTML = `
     <div class="chrono-row">
-      <span class="chrono-display" id="chronoDisp">${fmtTime(totalSeconds)}</span>
-      <button class="chrono-btn play ${colorClass}" id="chronoPlay">▶ Démarrer</button>
+      <span class="chrono-display" id="chronoDisp">${fmtTime(chronoRemaining)}</span>
+      <button class="chrono-btn play ${colorClass}" id="chronoPlay">${chronoRunning ? '⏸ Pause' : '▶ Démarrer'}</button>
       <button class="chrono-btn reset" id="chronoReset">↺</button>
     </div>
   `;
@@ -21,6 +124,42 @@ function initChrono(container, totalSeconds, sessionType, onDone) {
   const disp = document.getElementById('chronoDisp');
   const playBtn = document.getElementById('chronoPlay');
   const resetBtn = document.getElementById('chronoReset');
+
+  if (chronoRunning) {
+    disp.classList.add('running');
+    if (chronoRemaining <= 5 && chronoRemaining > 0) {
+      disp.className = 'chrono-display alert';
+    }
+    if (chronoRemaining <= 0) {
+      chronoRunning = false;
+      disp.textContent = '0:00';
+      disp.className = 'chrono-display done';
+      playBtn.textContent = '✓ Fini';
+      playBtn.className = 'chrono-btn reset';
+    }
+  }
+
+  if (chronoRunning && chronoRemaining > 0) {
+    chronoInterval = setInterval(() => {
+      chronoRemaining--;
+      disp.textContent = fmtTime(chronoRemaining);
+      if (chronoRemaining <= 5 && chronoRemaining > 0) {
+        disp.className = 'chrono-display alert';
+      }
+      if (chronoRemaining <= 0) {
+        clearInterval(chronoInterval);
+        chronoInterval = null;
+        chronoRunning = false;
+        disp.textContent = '0:00';
+        disp.className = 'chrono-display done';
+        playBtn.textContent = '✓ Fini';
+        playBtn.className = 'chrono-btn reset';
+        clearChronoState();
+        try { navigator.vibrate(200); } catch (e) {}
+        if (onDone) onDone();
+      }
+    }, 1000);
+  }
 
   playBtn.addEventListener('click', () => {
     if (chronoRunning) {
@@ -30,6 +169,7 @@ function initChrono(container, totalSeconds, sessionType, onDone) {
       playBtn.textContent = '▶ Reprendre';
       playBtn.className = 'chrono-btn play ' + colorClass;
       disp.classList.remove('running', 'alert', 'done');
+      clearChronoState();
     } else {
       if (chronoRemaining <= 0) {
         chronoRemaining = chronoTotal;
@@ -52,6 +192,7 @@ function initChrono(container, totalSeconds, sessionType, onDone) {
           disp.className = 'chrono-display done';
           playBtn.textContent = '✓ Fini';
           playBtn.className = 'chrono-btn reset';
+          clearChronoState();
           try { navigator.vibrate(200); } catch (e) {}
           if (onDone) onDone();
         }
@@ -67,7 +208,10 @@ function initChrono(container, totalSeconds, sessionType, onDone) {
     disp.className = 'chrono-display';
     playBtn.textContent = '▶ Démarrer';
     playBtn.className = 'chrono-btn play ' + colorClass;
+    clearChronoState();
   });
+
+  setupChronoVisibilityHandlers(totalSeconds, disp, playBtn, colorClass, onDone);
 
   return {
     getRemaining: () => chronoRemaining,
@@ -75,6 +219,7 @@ function initChrono(container, totalSeconds, sessionType, onDone) {
     stop: () => {
       if (chronoInterval) { clearInterval(chronoInterval); chronoInterval = null; }
       chronoRunning = false;
+      clearChronoState();
     }
   };
 }

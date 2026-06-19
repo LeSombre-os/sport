@@ -74,10 +74,13 @@ function rProg() {
     sec.ex.forEach((ex, i) => {
       const wi = ex.iw > 0 ? '+' + ex.iw + ' kg' : 'PDC';
       const lw = lastW(k, i);
+      const bonus = getConsecutiveSuccessCount(k, i);
       let progHtml = '';
       if (lw !== null) {
-        const nw = lw + 1;
-        progHtml = '<span class="prog-ind"><span class="last">Dernier : ' + (lw > 0 ? '+' + lw + ' kg' : 'PDC') + '</span> <span class="arr">→</span> <span class="next">Prochain : ' + (nw > 0 ? '+' + nw + ' kg' : 'PDC') + '</span></span>';
+        const nw = lw + bonus;
+        let bonusStr = '';
+        if (bonus > 0) bonusStr = ' <span class="prog-bonus">(+' + bonus + 'kg)</span>';
+        progHtml = '<span class="prog-ind"><span class="last">Dernier : ' + (lw > 0 ? '+' + lw + ' kg' : 'PDC') + '</span> <span class="arr">→</span> <span class="next">Prochain : ' + (nw > 0 ? '+' + nw + ' kg' : 'PDC') + '</span>' + bonusStr + '</span>';
       } else {
         progHtml = '<span class="prog-ind"><span class="init">Leste initial : ' + wi + '</span></span>';
       }
@@ -137,6 +140,7 @@ function initApp() {
   renderAll();
 
   document.getElementById('nxBtn').addEventListener('click', () => {
+    editingLog = null;
     switchTab('log');
     rLog(nT);
   });
@@ -147,7 +151,7 @@ function initApp() {
     btn.addEventListener('click', function() {
       const tab = this.dataset.t;
       switchTab(tab);
-      if (tab === 'log') rLog(nT);
+      if (tab === 'log') { editingLog = null; rLog(nT); }
       if (tab === 'stats') rStats();
       if (tab === 'settings') renderSettingsBadges();
     });
