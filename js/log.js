@@ -22,12 +22,12 @@ function saveFormSession(ty) {
   });
   cache.currentExoIndex = currentExoIndex;
   formCache = cache;
-  try { sessionStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  try { localStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
 }
 
 function restoreFormSession(ty) {
   try {
-    const raw = sessionStorage.getItem(FORM_KEY);
+    const raw = localStorage.getItem(FORM_KEY);
     if (!raw) return false;
     const data = JSON.parse(raw);
     if (data.sessionId !== ty) return false;
@@ -65,7 +65,7 @@ function restoreFormSession(ty) {
 
 function clearFormSession() {
   formCache = null;
-  try { sessionStorage.removeItem(FORM_KEY); } catch (e) {}
+  try { localStorage.removeItem(FORM_KEY); } catch (e) {}
   if (typeof clearChronoState === 'function') clearChronoState();
 }
 
@@ -84,7 +84,7 @@ function editExistingSession(session) {
     });
   }
   formCache = cache;
-  try { sessionStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  try { localStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
   switchTab('log');
   rLog(session.t);
 }
@@ -216,7 +216,7 @@ function rLog(ty) {
 
 function getSavedExoIndex(ty) {
   try {
-    const raw = sessionStorage.getItem(FORM_KEY);
+    const raw = localStorage.getItem(FORM_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (data.sessionId !== ty) return null;

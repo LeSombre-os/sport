@@ -275,12 +275,12 @@ function saveManualForm() {
       note: document.getElementById('mn_' + i)?.value || ''
     };
   });
-  try { sessionStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(data)); } catch (e) {}
 }
 
 function restoreManualForm() {
   try {
-    var raw = sessionStorage.getItem(MANUAL_FORM_KEY);
+    var raw = localStorage.getItem(MANUAL_FORM_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (e) { return null; }
@@ -305,7 +305,7 @@ function restoreManualFormFields() {
 }
 
 function clearManualForm() {
-  try { sessionStorage.removeItem(MANUAL_FORM_KEY); } catch (e) {}
+  try { localStorage.removeItem(MANUAL_FORM_KEY); } catch (e) {}
 }
 
 function closeManual() {

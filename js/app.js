@@ -165,7 +165,8 @@ function initApp() {
   document.getElementById('rstBtn').addEventListener('click', () => {
     if (confirm('Tout effacer ? Cette action est irréversible.') && confirm('Confirmer la suppression de toutes les données ?')) {
       localStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem(FORM_KEY);
+      localStorage.removeItem(FORM_KEY);
+      localStorage.removeItem(MANUAL_FORM_KEY);
       ss = [];
       userStats = { totalWorkouts: 0, currentStreak: 0, longestStreak: 0, lastWorkoutDate: '', badges: [] };
       switchTab('program');
