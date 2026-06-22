@@ -182,11 +182,32 @@ function initApp() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => {
+      navigator.serviceWorker.register('sw.js').then(function(reg) {
+        if (reg.waiting) showSwUpdate(reg);
+        reg.addEventListener('updatefound', function() {
+          var sw = reg.installing;
+          sw.addEventListener('statechange', function() {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              showSwUpdate(reg);
+            }
+          });
+        });
+      }).catch(function(err) {
         console.error('Erreur SW :', err);
       });
     });
   }
+
+function showSwUpdate(reg) {
+  var btn = document.getElementById('nxBtn');
+  btn.textContent = '🔄 Nouvelle version dispo !';
+  btn.onclick = function() {
+    reg.waiting.postMessage({ action: 'skipWaiting' });
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
+}
 }
 
 function openModal() {
