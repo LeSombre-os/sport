@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'force_v6';
 const FORM_KEY = 'force_form_v2';
+const MANUAL_FORM_KEY = 'force_manual_v1';
 
 const PR = {
   A: {
