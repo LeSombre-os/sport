@@ -7,11 +7,23 @@ function rStats() {
   }
 
   c.innerHTML =
-    '<div class="cd st-cd"><div class="cd-h"><h2>Progression des charges</h2></div><p class="st-desc">Évolution du poids par exercice (28 derniers jours).</p><div class="chart-scroll"><canvas id="chW"></canvas></div></div>' +
-    '<div class="cd st-cd"><div class="cd-h"><h2>Volume par séance</h2></div><p class="st-desc">Volume total estimé (poids × répétitions) — 28 derniers jours.</p><div class="chart-scroll"><canvas id="chV"></canvas></div></div>' +
-    '<div class="cd st-cd"><div class="cd-h"><h2>Ressenti moyen (RPE)</h2></div><p class="st-desc">Moyenne RPE par séance — 28 derniers jours.</p><div class="chart-scroll"><canvas id="chR"></canvas></div></div>';
+    '<div class="cd st-cd"><div class="cd-h"><h2>Progression des charges</h2></div><p class="st-desc">Évolution du poids par exercice (28 derniers jours).</p><div class="chart-scroll dim-right" id="chartScroll1"><canvas id="chW"></canvas></div></div>' +
+    '<div class="cd st-cd"><div class="cd-h"><h2>Volume par séance</h2></div><p class="st-desc">Volume total estimé (poids × répétitions) — 28 derniers jours.</p><div class="chart-scroll dim-right" id="chartScroll2"><canvas id="chV"></canvas></div></div>' +
+    '<div class="cd st-cd"><div class="cd-h"><h2>Ressenti moyen (RPE)</h2></div><p class="st-desc">Moyenne RPE par séance — 28 derniers jours.</p><div class="chart-scroll dim-right" id="chartScroll3"><canvas id="chR"></canvas></div></div>';
 
-  requestAnimationFrame(() => { drawW(); drawV(); drawR(); });
+  requestAnimationFrame(() => { drawW(); drawV(); drawR(); attachChartScrollListeners(); });
+}
+
+function attachChartScrollListeners() {
+  document.querySelectorAll('.chart-scroll').forEach(function(el) {
+    el.addEventListener('scroll', function() {
+      var canScroll = this.scrollWidth > this.clientWidth;
+      var atStart = this.scrollLeft <= 2;
+      var atEnd = this.scrollLeft >= this.scrollWidth - this.clientWidth - 2;
+      this.classList.toggle('dim-right', canScroll && !atEnd);
+      this.classList.toggle('dim-left', canScroll && !atStart);
+    });
+  });
 }
 
 function setupC(id, minDataWidth) {
@@ -24,9 +36,16 @@ function setupC(id, minDataWidth) {
   if (dataW > 0 && w > parentWidth) {
     c.style.width = w + 'px';
     c.style.minWidth = w + 'px';
+    parent.classList.add('dim-right');
   } else {
     c.style.width = '100%';
     c.style.minWidth = '';
+    parent.classList.remove('dim-right');
+    parent.classList.remove('dim-left');
+  }
+  parent.classList.remove('dim-left');
+  if (parent.scrollLeft !== undefined) {
+    parent.classList.toggle('dim-left', parent.scrollLeft > 0);
   }
   c.width = w * dpr;
   c.height = 360 * dpr;

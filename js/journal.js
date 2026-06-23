@@ -98,14 +98,16 @@ function renderSessionList(filtered) {
     if (!sec) return;
     const d = new Date(s.d);
     const isSkipped = !!s.skipped;
+    const isManual = !!s.manual;
 
     const doneCount = s.ex ? s.ex.filter(e => e && e.performed && e.performed.split(',').some(v => v.trim())).length : 0;
 
-    h += '<div class="je' + (isOpen ? ' je-open' : '') + '" data-sid="' + s.id + '">';
+    h += '<div class="je' + (isOpen ? ' je-open' : '') + (isManual ? ' je-manual' : '') + '" data-sid="' + s.id + '">';
     h += '<div class="jh je-toggle">';
     h += '<div class="lft">';
     h += '<span class="jd">' + fdFR(d) + '</span>';
     h += '<span class="jt ' + cc + '">' + s.t + '</span>';
+    if (isManual) h += '<span class="jt hc">Manuelle</span>';
     h += '</div>';
     h += '<div class="jh-right">';
     if (!isOpen && !isSkipped) h += '<span class="jh-summary">' + doneCount + '/' + sec.ex.length + ' exos</span>';
@@ -229,7 +231,12 @@ function attachJournalEvents() {
       e.stopPropagation();
       const id = Number(this.dataset.sid);
       const session = ss.find(s => s.id === id);
-      if (session) editExistingSession(session);
+      if (!session) return;
+      if (session.manual) {
+        editManualSession(session);
+      } else {
+        editExistingSession(session);
+      }
     });
   });
 
@@ -253,7 +260,6 @@ let manualType = 'A';
 function showManualLog() {
   manualType = 'A';
   const modal = document.getElementById('modal');
-  const c = modal.querySelector('.modal-c');
   renderManualForm();
   modal.classList.add('show');
   document.querySelector('.modal-bg')?.addEventListener('click', closeManual);
@@ -267,12 +273,19 @@ function saveManualForm() {
   };
   var sec = PR[manualType];
   if (!sec) return;
-  sec.ex.forEach(function(_, i) {
+  sec.ex.forEach(function(ex, i) {
+    var w = document.getElementById('mw_' + i);
+    var sets = [];
+    for (var si = 0; si < ex.sets; si++) {
+      var inp = document.getElementById('ms_' + i + '_' + si);
+      sets.push(inp ? inp.value : '');
+    }
+    var rpeEl = document.querySelector('.ec[data-m-ei="' + i + '"] .rpe-btn.sel');
     data.exercises[i] = {
-      weight: document.getElementById('mw_' + i)?.value || '',
-      reps: document.getElementById('mr_' + i)?.value || '',
-      rpe: document.getElementById('mrpe_' + i)?.value || '0',
-      note: document.getElementById('mn_' + i)?.value || ''
+      weight: w ? Number(w.value) || 0 : 0,
+      sets: sets,
+      rpe: rpeEl ? Number(rpeEl.dataset.rv) : 0,
+      note: (document.getElementById('mn_' + i)?.value || '').trim()
     };
   });
   try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(data)); } catch (e) {}
@@ -293,14 +306,28 @@ function restoreManualFormFields() {
   if (dateEl && data.date) dateEl.value = data.date;
   Object.keys(data.exercises).forEach(function(i) {
     var ex = data.exercises[i];
+    var idx = parseInt(i);
     var w = document.getElementById('mw_' + i);
-    var r = document.getElementById('mr_' + i);
-    var rpe = document.getElementById('mrpe_' + i);
+    if (w && ex.weight !== undefined) w.value = ex.weight;
+    if (ex.sets) {
+      ex.sets.forEach(function(val, si) {
+        var inp = document.getElementById('ms_' + i + '_' + si);
+        if (inp) {
+          inp.value = val;
+          var sec = PR[manualType];
+          if (sec && sec.ex[idx]) repColor(inp, sec.ex[idx], si);
+        }
+      });
+    }
+    if (ex.rpe) {
+      var btns = document.querySelectorAll('.ec[data-m-ei="' + i + '"] .rpe-btn');
+      btns.forEach(function(b) { b.classList.toggle('sel', Number(b.dataset.rv) === ex.rpe); });
+    }
     var n = document.getElementById('mn_' + i);
-    if (w && ex.weight) w.value = ex.weight;
-    if (r && ex.reps) r.value = ex.reps;
-    if (rpe && ex.rpe) rpe.value = ex.rpe;
     if (n && ex.note) n.value = ex.note;
+    var pdcBtn = document.querySelector('.pdc[data-m-pdc="' + i + '"]');
+    if (pdcBtn && Number(ex.weight) === 0) pdcBtn.classList.add('act');
+    else if (pdcBtn) pdcBtn.classList.remove('act');
   });
 }
 
@@ -309,12 +336,34 @@ function clearManualForm() {
 }
 
 function closeManual() {
+  var c = document.getElementById('modal').querySelector('.modal-c');
+  if (c) c.className = 'modal-c';
   document.getElementById('modal').classList.remove('show');
+}
+
+function editManualSession(session) {
+  manualType = session.t;
+  var cache = { type: session.t, date: session.d, exercises: {} };
+  if (session.ex) {
+    session.ex.forEach(function(e, i) {
+      var sets = [];
+      if (e.performed) sets = e.performed.split(',');
+      cache.exercises[i] = {
+        weight: e.weight || 0,
+        sets: sets,
+        rpe: e.rpe || 0,
+        note: e.note || ''
+      };
+    });
+  }
+  try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  showManualLog();
 }
 
 function renderManualForm() {
   var sec = PR[manualType];
   var c = document.getElementById('modal').querySelector('.modal-c');
+  c.className = 'modal-c manual-wide';
   var bc = manualType === 'A' ? 'ba' : 'bb';
 
   var data = restoreManualForm();
@@ -322,28 +371,40 @@ function renderManualForm() {
   var savedType = (data && data.type) || manualType;
 
   let h = '<div class="manual-form">';
-  h += '<div class="manual-hdr"><h3>Ajouter une séance</h3><span class="bdg ' + bc + '" style="font-size:.7rem">' + savedType + '</span></div>';
+  h += '<div class="manual-hdr"><h3>Ajouter une séance</h3><div style="display:flex;gap:6px">';
+  h += '<span class="bdg bcx" style="font-size:.6rem">MANUEL</span>';
+  h += '<span class="bdg ' + bc + '" style="font-size:.7rem">' + savedType + '</span></div></div>';
   h += '<div class="manual-date"><label>Date</label><input type="date" id="manualDate" value="' + savedDate + '"></div>';
   h += '<div class="manual-type"><label>Type</label><div class="manual-type-btns">';
-  h += '<button class="j-type-btn' + (savedType === 'A' ? ' act' : '') + '" data-mt="A">Séance A</button>';
-  h += '<button class="j-type-btn' + (savedType === 'B' ? ' act' : '') + '" data-mt="B">Séance B</button>';
+  h += '<button class="manual-type-btn' + (savedType === 'A' ? ' act' : '') + '" data-mt="A">Séance A</button>';
+  h += '<button class="manual-type-btn' + (savedType === 'B' ? ' act' : '') + '" data-mt="B">Séance B</button>';
   h += '</div></div>';
   h += '<div class="manual-exos">';
-  sec.ex.forEach((ex, i) => {
-    h += '<div class="manual-exo">';
+  sec.ex.forEach(function(ex, i) {
+    var lw = lastW(manualType, i);
+    var pw = getProposedWeight(manualType, i);
+    var sg = lw !== null ? pw : ex.iw;
+    var pdc = sg === 0;
     var isTimeBased = ex.reps && (ex.reps.includes('s') || ex.reps.includes('sec'));
-    h += '<div class="manual-exo-name">' + ex.num + '. ' + ex.name + '</div>';
-    h += '<div class="manual-exo-row">';
-    h += '<div class="manual-field"><label>Leste (kg)</label><input type="number" id="mw_' + i + '" value="' + ex.iw + '" min="0"></div>';
-    h += '<div class="manual-field"><label>Réalisé' + (isTimeBased ? ' (sec)' : '') + '</label><input type="text" id="mr_' + i + '" placeholder="' + (isTimeBased ? 'ex: 35,30,40' : 'ex: 4,4,3,4') + '" inputmode="numeric"></div>';
-    if (isTimeBased) {
-      h += '<div class="manual-field"><label>Objectif</label><span style="font-size:.7rem;color:var(--text2);padding:8px 0;display:block">' + formatTargetReps(ex.reps) + '</span></div>';
-      h += '<div class="manual-field"><label>Ressenti</label><select id="mrpe_' + i + '"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>';
-    } else {
-      h += '<div class="manual-field"><label>RPE</label><select id="mrpe_' + i + '"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>';
+
+    h += '<div class="ec ec-manual" data-m-ei="' + i + '">';
+    h += '<div class="ech"><span class="nm">' + ex.num + '. ' + ex.name + '</span><span class="tg">' + ex.sets + '×' + formatTargetReps(ex.reps) + '</span></div>';
+    h += '<div class="ei2">';
+    h += '<div class="lg"><l>Leste</l><div class="ww"><input type="number" id="mw_' + i + '" value="' + sg + '" min="0" step="1"><span class="unit">kg</span><button type="button" class="pdc' + (pdc ? ' act' : '') + '" data-m-pdc="' + i + '">PDC</button></div></div>';
+    h += '<div class="lg"><l>Réalisé</l><div class="set-row" id="mSetRow_' + i + '">';
+    for (var si = 0; si < ex.sets; si++) {
+      h += '<div class="set-input"><l>S' + (si + 1) + '</l><input type="text" inputmode="numeric" pattern="[0-9]*" id="ms_' + i + '_' + si + '" placeholder="0" autocomplete="off" maxlength="4"></div>';
     }
-    h += '</div>';
-    h += '<input type="text" id="mn_' + i + '" placeholder="Note (optionnelle)" class="manual-note">';
+    h += '</div></div></div>';
+    if (isTimeBased) {
+      h += '<div class="lg" style="margin-bottom:4px"><l>Moyenne vs Objectif</l><div class="rkc-summary" id="mRkcSummary_' + i + '">—</div></div>';
+    }
+    h += '<div class="lg" style="margin-bottom:6px"><l>Ressenti</l><div class="rpe-row" data-m-rpe="' + i + '">';
+    for (var v = 1; v <= 5; v++) {
+      h += '<button type="button" class="rpe-btn s' + v + '" data-rv="' + v + '">' + v + '</button>';
+    }
+    h += '</div></div>';
+    h += '<div class="lg"><input type="text" id="mn_' + i + '" placeholder="Note (optionnelle)" autocomplete="off"></div>';
     h += '</div>';
   });
   h += '</div>';
@@ -361,21 +422,88 @@ function renderManualForm() {
 
   restoreManualFormFields();
 
-  document.getElementById('manualCancelBtn')?.addEventListener('click', closeManual);
-  document.getElementById('manualSaveBtn')?.addEventListener('click', saveManualLog);
+  document.querySelectorAll('.pdc[data-m-pdc]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var i = this.dataset.mPdc;
+      var inp = document.getElementById('mw_' + i);
+      var wasAct = this.classList.contains('act');
+      if (!wasAct) {
+        this.dataset.prevWeight = inp.value;
+        inp.value = 0;
+      } else {
+        inp.value = this.dataset.prevWeight !== undefined ? this.dataset.prevWeight : PR[manualType].ex[parseInt(i)].iw;
+      }
+      this.classList.toggle('act');
+      saveManualForm();
+    });
+  });
 
-  document.querySelectorAll('[data-mt]').forEach(b => {
+  document.querySelectorAll('.rpe-row .rpe-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var row = this.closest('.rpe-row');
+      row.querySelectorAll('.rpe-btn').forEach(function(bb) { bb.classList.remove('sel'); });
+      this.classList.add('sel');
+      saveManualForm();
+    });
+  });
+
+  document.querySelectorAll('[id^="ms_"]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      var parts = this.id.split('_');
+      var exI = parseInt(parts[1]);
+      var si = parseInt(parts[2]);
+      var p = PR[manualType];
+      if (p && p.ex[exI]) {
+        repColor(this, p.ex[exI], si);
+        if (p.ex[exI].reps && (p.ex[exI].reps.includes('s') || p.ex[exI].reps.includes('sec'))) {
+          updateManualRkcSummary(exI);
+        }
+      }
+      saveManualForm();
+    });
+    el.addEventListener('focus', function() { this.select(); });
+  });
+
+  document.getElementById('manualCancelBtn').addEventListener('click', closeManual);
+  document.getElementById('manualSaveBtn').addEventListener('click', saveManualLog);
+
+  document.querySelectorAll('[data-mt]').forEach(function(b) {
     b.addEventListener('click', function() {
       saveManualForm();
       manualType = this.dataset.mt;
+      var d = restoreManualForm() || {};
+      d.type = manualType;
+      try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(d)); } catch (e) {}
       renderManualForm();
     });
   });
 
-  document.querySelectorAll('#manualDate, [id^="mw_"], [id^="mr_"], [id^="mrpe_"], [id^="mn_"]').forEach(function(el) {
+  document.querySelectorAll('#manualDate, [id^="mw_"], [id^="ms_"], [id^="mn_"]').forEach(function(el) {
     el.addEventListener('input', saveManualForm);
     el.addEventListener('change', saveManualForm);
   });
+}
+
+function updateManualRkcSummary(exIdx) {
+  var sec = PR[manualType];
+  if (!sec || !sec.ex[exIdx]) return;
+  var ex = sec.ex[exIdx];
+  var el = document.getElementById('mRkcSummary_' + exIdx);
+  if (!el) return;
+  var vals = [];
+  for (var si = 0; si < ex.sets; si++) {
+    var inp = document.getElementById('ms_' + exIdx + '_' + si);
+    var v = inp ? parseInt(inp.value) : 0;
+    if (v > 0) vals.push(v);
+  }
+  if (!vals.length) { el.textContent = '—'; el.className = 'rkc-summary'; return; }
+  var avg = Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+  var range = parseRepRange(ex.reps);
+  var ok = false;
+  if (range) ok = avg >= range.min && avg <= range.max;
+  el.textContent = 'Moy: ' + avg + 's' + (range ? ' · ' + range.min + '-' + range.max + 's' : '') + (ok ? ' ✅' : ' ❌');
+  el.className = 'rkc-summary' + (ok ? ' ok' : ' ko');
 }
 
 function saveManualLog() {
@@ -390,14 +518,20 @@ function saveManualLog() {
   let ok = true;
   sec.ex.forEach((exDef, i) => {
     const w = Number(document.getElementById('mw_' + i)?.value) || 0;
-    const r = (document.getElementById('mr_' + i)?.value || '').trim();
-    const rpe = Number(document.getElementById('mrpe_' + i)?.value) || 0;
+    const sets = [];
+    for (let si = 0; si < exDef.sets; si++) {
+      const inp = document.getElementById('ms_' + i + '_' + si);
+      sets.push(inp ? inp.value.trim() : '');
+    }
+    const performed = sets.join(',');
+    const rpeEl = document.querySelector('.ec[data-m-ei="' + i + '"] .rpe-btn.sel');
+    const rpe = rpeEl ? Number(rpeEl.dataset.rv) : 0;
     const n = (document.getElementById('mn_' + i)?.value || '').trim();
-    const filled = r.split(',').some(v => v.trim());
+    const filled = sets.some(v => v.trim());
     const isTimeBased = exDef.reps && (exDef.reps.includes('s') || exDef.reps.includes('sec'));
     if (!filled) ok = false;
     if (!isTimeBased && !rpe) ok = false;
-    ex[i] = { weight: w, performed: r, rpe: rpe, note: n, ei: i };
+    ex[i] = { weight: w, performed: performed, rpe: rpe, note: n, ei: i };
   });
 
   if (!ok) { toast('Remplis tous les champs pour chaque exercice', true); return; }

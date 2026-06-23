@@ -285,7 +285,7 @@ function renderExo(ty, idx) {
   h += '<div class="lg"><l>Réalisé</l>';
   h += '<div class="set-row" id="setRow_' + idx + '">';
   for (let si = 0; si < ex.sets; si++) {
-    h += '<div class="set-input"><l>S' + (si + 1) + '</l><input type="text" inputmode="numeric" pattern="[0-9]*" id="s_' + idx + '_' + si + '" placeholder="0" autocomplete="off" maxlength="3"></div>';
+    h += '<div class="set-input"><l>S' + (si + 1) + '</l><input type="text" inputmode="numeric" pattern="[0-9]*" id="s_' + idx + '_' + si + '" placeholder="0" autocomplete="off" maxlength="4"></div>';
   }
   h += '</div></div></div>';
 
