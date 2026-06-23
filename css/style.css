@@ -462,7 +462,9 @@ body {
 .lg input:focus, .lg textarea:focus { border-color: var(--text3); }
 .lg input::placeholder, .lg textarea::placeholder { color: var(--text3); opacity: .5; }
 .ww { display: flex; gap: 6px; align-items: center; }
-.ww input { flex: 1; }
+.ww input { flex: 1; min-width: 60px; height: 44px; text-align: center; -moz-appearance: textfield; }
+.ww input::-webkit-outer-spin-button,
+.ww input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .ww .unit { font-size: .7rem; color: var(--text3); padding: 0 3px; font-weight: 500; }
 .pdc {
   padding: 8px 12px;
@@ -1145,6 +1147,7 @@ body {
 @media (min-width: 600px) {
   .ei2 { grid-template-columns: 1fr 1fr 1.5fr; }
   .set-input input { width: 56px; height: 52px; }
+  .ww input { height: 52px; }
 }
 @media (min-width: 820px) {
   .app { max-width: 850px; margin: 0 auto; }

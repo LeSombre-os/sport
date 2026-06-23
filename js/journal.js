@@ -470,11 +470,8 @@ function renderManualForm() {
 
   document.querySelectorAll('[data-mt]').forEach(function(b) {
     b.addEventListener('click', function() {
-      saveManualForm();
       manualType = this.dataset.mt;
-      var d = restoreManualForm() || {};
-      d.type = manualType;
-      try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify(d)); } catch (e) {}
+      try { localStorage.setItem(MANUAL_FORM_KEY, JSON.stringify({ type: manualType, date: document.getElementById('manualDate')?.value || fdISO(new Date()) })); } catch (e) {}
       renderManualForm();
     });
   });
