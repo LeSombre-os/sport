@@ -81,7 +81,7 @@ function xPosDate(d, pad, cw, scale) {
 const COLORS = ['#e8455b', '#4a9ac8', '#f0b848', '#7ac07a', '#b07aac', '#e8874a', '#5ab8b0', '#d06070'];
 
 function drawW() {
-  const pad = 48, padR = 18, padT = 44, padB = 42;
+  const pad = 48, padR = 18, padT = 60, padB = 42;
 
   const series = [];
   ['A', 'B'].forEach(type => {
@@ -110,7 +110,7 @@ function drawW() {
   if (!allPts.length) return;
 
   const allDates = [...new Set(allPts.map(p => p.d))].sort();
-  const o = setupC('chW', allDates.length * 60);
+  const o = setupC('chW', allDates.length * 40);
   const ctx = o.ctx, W = o.r.width, H = o.r.height;
   const cw = W - pad - padR, ch = H - padT - padB;
   const scale = dateScalePadding(allDates);
@@ -136,15 +136,22 @@ function drawW() {
     }
   });
 
-  const legendY = 18;
+  const legendMaxW = W - pad - padR;
+  let legendY = 18;
   let legendX = pad;
+  const legendLineH = 20;
   data.forEach(d => {
     if (!d.pts.length) return;
+    const nameW = ctx.measureText(d.name).width + 34;
+    if (legendX + nameW > legendMaxW && legendX > pad) {
+      legendY += legendLineH;
+      legendX = pad;
+    }
     ctx.fillStyle = d.color;
     ctx.beginPath(); ctx.arc(legendX + 7, legendY - 4, 5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#c8c4b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
     ctx.fillText(d.name, legendX + 16, legendY);
-    legendX += ctx.measureText(d.name).width + 34;
+    legendX += nameW;
   });
 
   data.forEach(d => {
@@ -193,7 +200,7 @@ function drawV() {
   });
   if (!vols.length) return;
 
-  const o = setupC('chV', vols.length * 60);
+  const o = setupC('chV', vols.length * 40);
   const ctx = o.ctx, W = o.r.width, H = o.r.height;
   const cw = W - pad - padR, ch = H - padT - padB;
 
@@ -249,7 +256,7 @@ function drawR() {
 
   const allRPE = [...rpes].sort((a, b) => a.d.localeCompare(b.d));
   const uniqueRpeDates = [...new Set(allRPE.map(r => r.d))].sort();
-  const o = setupC('chR', uniqueRpeDates.length * 70);
+  const o = setupC('chR', uniqueRpeDates.length * 50);
   const ctx = o.ctx, W = o.r.width, H = o.r.height;
   const cw = W - pad - padR, ch = H - padT - padB;
 

@@ -4,7 +4,6 @@ const URLS = [
   'css/style.css',
   'js/data.js',
   'js/badges.js',
-  'js/chrono.js',
   'js/log.js',
   'js/journal.js',
   'js/stats.js',

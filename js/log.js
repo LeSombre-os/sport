@@ -1,12 +1,18 @@
 let currentExoIndex = 0;
 let editingLog = null;
-let chronoInstance = null;
 let formCache = null;
+let manualMode = false;
+let manualDate = '';
+
+function getSid(ty) { return manualMode ? 'M-' + ty : ty; }
+function getStoreKey() { return manualMode ? MANUAL_FORM_KEY : FORM_KEY; }
 
 function saveFormSession(ty) {
   const sec = PR[ty];
   if (!sec) return;
-  const cache = (formCache && formCache.sessionId === ty) ? JSON.parse(JSON.stringify(formCache)) : { sessionId: ty, lastUpdated: Date.now(), exercises: {} };
+  const sid = getSid(ty);
+  const cache = (formCache && formCache.sessionId === sid) ? JSON.parse(JSON.stringify(formCache)) : { sessionId: sid, manual: manualMode || undefined, date: manualDate, lastUpdated: Date.now(), exercises: {} };
+  if (manualMode) cache.date = document.getElementById('manualDate')?.value || manualDate;
   sec.ex.forEach((ex, i) => {
     const w = document.getElementById('w_' + i);
     if (!w) return;
@@ -22,16 +28,17 @@ function saveFormSession(ty) {
   });
   cache.currentExoIndex = currentExoIndex;
   formCache = cache;
-  try { localStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  try { localStorage.setItem(getStoreKey(), JSON.stringify(cache)); } catch (e) {}
 }
 
 function restoreFormSession(ty) {
   try {
-    const raw = localStorage.getItem(FORM_KEY);
+    const raw = localStorage.getItem(getStoreKey());
     if (!raw) return false;
     const data = JSON.parse(raw);
-    if (data.sessionId !== ty) return false;
+    if (data.sessionId !== getSid(ty)) return false;
     formCache = data;
+    if (data.manual) { manualMode = true; if (data.date) manualDate = data.date; }
     const sec = PR[ty];
     if (!sec) return false;
     sec.ex.forEach((ex, i) => {
@@ -66,13 +73,19 @@ function restoreFormSession(ty) {
 function clearFormSession() {
   formCache = null;
   try { localStorage.removeItem(FORM_KEY); } catch (e) {}
-  if (typeof clearChronoState === 'function') clearChronoState();
+  try { localStorage.removeItem(MANUAL_FORM_KEY); } catch (e) {}
+  manualMode = false;
+  manualDate = '';
 }
 
 function editExistingSession(session) {
   editingLog = JSON.parse(JSON.stringify(session));
-  nT = session.t;
-  const cache = { sessionId: session.t, lastUpdated: Date.now(), exercises: {} };
+  manualMode = !!session.manual;
+  manualDate = session.d || fdISO(new Date());
+  if (!manualMode) nT = session.t;
+  const key = manualMode ? MANUAL_FORM_KEY : FORM_KEY;
+  const sid = manualMode ? 'M-' + session.t : session.t;
+  const cache = { sessionId: sid, manual: manualMode || undefined, date: manualDate, lastUpdated: Date.now(), exercises: {} };
   if (session.ex) {
     session.ex.forEach((e, i) => {
       cache.exercises[i] = {
@@ -84,9 +97,9 @@ function editExistingSession(session) {
     });
   }
   formCache = cache;
-  try { localStorage.setItem(FORM_KEY, JSON.stringify(cache)); } catch (e) {}
+  try { localStorage.setItem(key, JSON.stringify(cache)); } catch (e) {}
   switchTab('log');
-  rLog(session.t);
+  rLog(session.t, { manual: manualMode, date: manualDate });
 }
 
 function getSetValues(exIdx, ty) {
@@ -184,14 +197,27 @@ function updateRkcSummary(exIdx, ty) {
   el.className = 'rkc-summary' + (ok ? ' ok' : ' ko');
 }
 
-function rLog(ty) {
-  nT = ty;
+function rLog(ty, options = {}) {
+  manualMode = !!options.manual;
+  manualDate = options.date || fdISO(new Date());
+  if (!manualMode) nT = ty;
   currentExoIndex = 0;
   const c = document.getElementById('lC');
   const sec = PR[ty];
   if (!sec) { c.innerHTML = '<div class="l-empty">Sélectionne une séance</div>'; return; }
 
-  let h = '<div class="l-session">' + sec.label + ' — ' + sec.focus + '</div>';
+  let h = '<div class="l-session">';
+  if (manualMode) h += '<span class="bdg bcx" style="font-size:.6rem;margin-right:6px">MANUEL</span>';
+  h += sec.label + ' — ' + sec.focus + '</div>';
+
+  if (manualMode) {
+    h += '<div class="mf-date" style="margin-bottom:8px"><label>Date</label><input type="date" id="manualDate" value="' + manualDate + '"></div>';
+    h += '<div class="mf-type" style="margin-bottom:8px"><label>Type</label><div class="mf-type-btns">';
+    h += '<button class="mf-type-btn' + (ty === 'A' ? ' act' : '') + '" data-mt="A">Séance A</button>';
+    h += '<button class="mf-type-btn' + (ty === 'B' ? ' act' : '') + '" data-mt="B">Séance B</button>';
+    h += '</div></div>';
+  }
+
   h += '<div id="exoStep" style="text-align:center;font-size:.72rem;color:var(--text3);margin-bottom:10px">Exercice 1/' + sec.ex.length + '</div>';
   h += '<div class="log-nav"><button id="prevExo" disabled>◀ Précédent</button><button id="nextExo">Suivant ▶</button></div>';
   h += '<div id="lF">';
@@ -210,16 +236,29 @@ function rLog(ty) {
   });
 
   attachNextHandler(ty);
-
   restoreFormSession(ty);
+
+  if (manualMode) {
+    document.getElementById('manualDate')?.addEventListener('change', function() {
+      manualDate = this.value;
+      saveFormSession(ty);
+    });
+    document.querySelectorAll('[data-mt]').forEach(b => {
+      b.addEventListener('click', function() {
+        saveFormSession(ty);
+        manualDate = document.getElementById('manualDate')?.value || manualDate;
+        rLog(this.dataset.mt, { manual: true, date: manualDate });
+      });
+    });
+  }
 }
 
 function getSavedExoIndex(ty) {
   try {
-    const raw = localStorage.getItem(FORM_KEY);
+    const raw = localStorage.getItem(getStoreKey());
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.sessionId !== ty) return null;
+    if (data.sessionId !== getSid(ty)) return null;
     if (data.currentExoIndex !== undefined && data.currentExoIndex > 0) return data.currentExoIndex;
   } catch (e) {}
   return null;
@@ -275,10 +314,8 @@ function renderExo(ty, idx) {
   const pdc = sg === 0;
 
   let h = '';
-  h += `<div class="ec" data-ei="${idx}">`;
+  h += `<div class="ec${manualMode ? ' ec-manual' : ''}" data-ei="${idx}">`;
   h += '<div class="ech"><span class="nm">' + ex.num + '. ' + ex.name + '</span><span class="tg">' + ex.sets + '×' + formatTargetReps(ex.reps) + '</span></div>';
-
-  h += '<div id="chrono_' + idx + '"></div>';
 
   h += '<div class="ei2">';
   h += '<div class="lg"><l>Leste</l><div class="ww"><input type="number" name="w_' + idx + '" id="w_' + idx + '" value="' + sg + '" min="0" step="1" onkeypress="return event.charCode >= 48"><span class="unit">kg</span><button type="button" class="pdc' + (pdc ? ' act' : '') + '" data-pdc="' + idx + '">PDC</button></div></div>';
@@ -309,18 +346,6 @@ function renderExo(ty, idx) {
   container.innerHTML = h;
 
   restoreFormSession(ty);
-
-  if (chronoInstance) chronoInstance.stop();
-  chronoInstance = initChrono(document.getElementById('chrono_' + idx), ex.rest, ty, () => {
-    if (idx < sec.ex.length - 1) {
-      const next = sec.ex[idx + 1];
-      showNextExoPopup(next.name, `${next.sets}×${formatTargetReps(next.reps)} · ${next.iw > 0 ? '+' + next.iw + ' kg' : 'PDC'} · Repos ${next.rest >= 60 ? Math.floor(next.rest / 60) + 'min' : next.rest + 's'}`, () => {
-        currentExoIndex = idx + 1;
-        renderExo(ty, currentExoIndex);
-        attachNextHandler(ty);
-      }, ty);
-    }
-  }, idx);
 
   document.querySelectorAll('.pdc').forEach(b => {
     b.addEventListener('click', function() {
@@ -365,7 +390,7 @@ function renderExo(ty, idx) {
   });
 
   document.querySelectorAll('#exoContainer input, #exoContainer textarea').forEach(el => {
-    if (!el.id.startsWith('s_') && !el.id.startsWith('chrono')) {
+    if (!el.id.startsWith('s_') && !el.id.startsWith('manualDate')) {
       el.addEventListener('input', () => saveFormSession(ty));
       el.addEventListener('change', () => saveFormSession(ty));
     }
@@ -383,6 +408,7 @@ function showRecap(ty) {
 
   const color = ty.toLowerCase();
   let h = '<div class="recap-card"><div class="recap-hdr recap-hdr-' + color + '">';
+  if (manualMode) h += '<span class="bdg bcx" style="font-size:.55rem;margin-right:8px">MANUEL</span>';
   h += '<span class="recap-title">' + sec.label + '</span>';
   h += '<span class="recap-focus">' + sec.focus + '</span>';
   h += '</div><div class="recap-body">';
@@ -421,10 +447,12 @@ function hLog(ty) {
   const sec = PR[t];
   if (!sec) return;
 
-  if (!formCache || formCache.sessionId !== t) {
+  if (!formCache || formCache.sessionId !== getSid(t)) {
     toast('Erreur : données de session introuvables', true);
     return;
   }
+
+  const isManual = !!formCache.manual;
 
   const ex = [];
   let ok = true;
@@ -440,14 +468,14 @@ function hLog(ty) {
 
   if (!ok) { toast('Remplis tous les champs obligatoires pour chaque exercice', true); return; }
 
-  const dateKey = editingLog ? editingLog.d : fdISO(new Date());
+  const dateKey = isManual ? (formCache.date || fdISO(new Date())) : (editingLog ? editingLog.d : fdISO(new Date()));
   const existing = ss.findIndex(s => s.d === dateKey);
   if (existing !== -1) {
     const prevType = ss[existing].t;
-    ss[existing] = { ...(editingLog || {}), d: dateKey, t: t, ex: ex };
+    ss[existing] = { ...(editingLog || {}), d: dateKey, t: t, ex: ex, manual: isManual || undefined };
     if (prevType !== t) toast('Remplace la séance ' + prevType + ' par ' + t + ' sur ce jour', false);
   } else {
-    ss.push({ id: Date.now(), d: dateKey, t: t, ex: ex });
+    ss.push({ id: Date.now(), d: dateKey, t: t, ex: ex, manual: isManual || undefined });
   }
   clearFormSession();
   editingLog = null;
@@ -461,9 +489,16 @@ function hLog(ty) {
     setTimeout(() => showBadgeUnlock(newBadges), 500);
   }
 
-  setTimeout(() => {
-    switchTab('log');
-    rLog(nT);
-    toast('Séance enregistrée ! Prochaine : ' + PR[nT].label);
-  }, newBadges.length ? 1200 : 400);
+  if (isManual) {
+    setTimeout(() => {
+      switchTab('journal');
+      toast('Séance manuelle enregistrée !');
+    }, newBadges.length ? 1200 : 400);
+  } else {
+    setTimeout(() => {
+      switchTab('log');
+      rLog(nT);
+      toast('Séance enregistrée ! Prochaine : ' + PR[nT].label);
+    }, newBadges.length ? 1200 : 400);
+  }
 }
