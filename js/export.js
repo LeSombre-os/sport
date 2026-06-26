@@ -44,7 +44,7 @@ function impCode() {
             if (e.ei === undefined) e.ei = i;
           });
         }
-        const existing = ss.findIndex(s => s.d === newSession.d && !s.manual);
+        const existing = ss.findIndex(s => s.d === newSession.d && s.t === newSession.t && !!s.manual === !!newSession.manual);
         if (existing !== -1) {
           ss[existing] = newSession;
         } else {
@@ -53,8 +53,10 @@ function impCode() {
       });
       save();
       updateStreak();
+      const nB = checkBadges();
       closeModal();
       renderAll();
+      if (nB.length) showBadgeUnlock(nB);
       toast('Données restaurées ! ' + data.length + ' séances');
     } else {
       toast('Code invalide', true);

@@ -65,11 +65,12 @@ function load() {
 function deduplicateLogs() {
   const seen = new Map();
   let changed = false;
-  ss.forEach(s => {
-    const key = s.d;
-    if (seen.has(key)) { changed = true; return; }
+  for (let i = ss.length - 1; i >= 0; i--) {
+    const s = ss[i];
+    const key = s.d + '|' + (s.t || '') + '|' + !!s.manual;
+    if (seen.has(key)) { changed = true; continue; }
     seen.set(key, s);
-  });
+  }
   if (changed) {
     ss = Array.from(seen.values());
   }

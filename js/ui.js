@@ -71,7 +71,7 @@ function renderProgram() {
   const isToday = cardDateStr === todayStr;
   document.getElementById('nxD').textContent = fdFR(d) + (isToday ? ' (aujourd\'hui)' : '');
 
-  const cardSession = ss.find(s => s.d === cardDateStr && !s.skipped);
+  const cardSession = ss.find(s => s.d === cardDateStr && !s.skipped && !s.manual);
 
   document.getElementById('skipBtn').style.display = cardSession ? 'none' : '';
   document.getElementById('nxBtn').textContent = cardSession ? 'Séance déjà enregistrée ✓' : 'Saisir cette séance';
@@ -123,17 +123,17 @@ function skipSession() {
   const d = nextD();
   const cardDate = fdISO(d);
   const today = fdISO(new Date());
-  if (ss.some(s => s.d === cardDate && !s.skipped)) {
+  if (ss.some(s => s.d === cardDate && !s.skipped && !s.manual)) {
     toast('Cette séance est déjà enregistrée !', true);
     return;
   }
-  if (ss.some(s => s.d === cardDate && s.skipped)) {
+  if (ss.some(s => s.d === cardDate && s.skipped && !s.manual)) {
     toast('Cette séance est déjà passée', true);
     return;
   }
   const label = cardDate === today ? " d'aujourd'hui" : ' du ' + fdFR(d);
   if (!confirm('Passer la séance ' + nT + label + ' ?')) return;
-  let existing = ss.findIndex(s => s.d === cardDate);
+  let existing = ss.findIndex(s => s.d === cardDate && !s.manual);
   if (existing !== -1) {
     ss[existing].skipped = true;
   } else {

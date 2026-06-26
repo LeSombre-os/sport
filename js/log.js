@@ -469,7 +469,7 @@ function hLog(ty) {
   if (!ok) { toast('Remplis tous les champs obligatoires pour chaque exercice', true); return; }
 
   const dateKey = isManual ? (formCache.date || fdISO(new Date())) : (editingLog ? editingLog.d : fdISO(new Date()));
-  const existing = ss.findIndex(s => s.d === dateKey);
+  const existing = ss.findIndex(s => s.d === dateKey && s.t === t && !!s.manual === !!isManual);
   if (existing !== -1) {
     const prevType = ss[existing].t;
     ss[existing] = { ...(editingLog || {}), d: dateKey, t: t, ex: ex, manual: isManual || undefined };
