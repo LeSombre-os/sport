@@ -256,8 +256,3 @@ function showManualLog() {
   switchTab('log');
   rLog('A', { manual: true, date: date });
 }
-
-function editManualSession(session) {
-  editExistingSession(session);
-}
-

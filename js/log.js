@@ -3,8 +3,8 @@ let editingLog = null;
 let formCache = null;
 let manualMode = false;
 let manualDate = '';
-
 function getSid(ty) { return manualMode ? 'M-' + ty : ty; }
+
 function getStoreKey() { return manualMode ? MANUAL_FORM_KEY : FORM_KEY; }
 
 function saveFormSession(ty) {
@@ -207,7 +207,7 @@ function rLog(ty, options = {}) {
   if (!sec) { c.innerHTML = '<div class="l-empty">Sélectionne une séance</div>'; return; }
 
   let h = '<div class="l-session">';
-  if (manualMode) h += '<span class="bdg bcx" style="font-size:.6rem;margin-right:6px">MANUEL</span>';
+  if (manualMode) h += '<span class="bdg" style="font-size:.6rem;margin-right:6px;background:rgba(245,158,11,0.12);color:var(--ui-accent)">MANUEL</span>';
   h += sec.label + ' — ' + sec.focus + '</div>';
 
   if (manualMode) {
@@ -326,22 +326,20 @@ function renderExo(ty, idx) {
   }
   h += '</div></div></div>';
 
+  h += '<div class="lg" style="margin-bottom:6px"><l>Ressenti</l><div class="rpe-row" data-rpe="' + idx + '">';
+  for (let v = 1; v <= 5; v++) {
+    h += '<button type="button" class="rpe-btn s' + v + '" data-rv="' + v + '">' + v + '</button>';
+  }
+  h += '</div></div>';
+
   if (ex.reps && (ex.reps.includes('s') || ex.reps.includes('sec'))) {
     h += '<div class="lg" style="margin-bottom:4px"><l>Moyenne vs Objectif</l><div class="rkc-summary" id="rkcSummary_' + idx + '">—</div></div>';
-    h += '<div class="lg"><l>Ressenti</l><div class="rpe-row" data-rpe="' + idx + '">';
-    for (let v = 1; v <= 5; v++) {
-      h += '<button type="button" class="rpe-btn s' + v + '" data-rv="' + v + '">' + v + '</button>';
-    }
-    h += '</div></div>';
-  } else {
-    h += '<div class="lg" style="margin-bottom:6px"><l>Ressenti</l><div class="rpe-row" data-rpe="' + idx + '">';
-    for (let v = 1; v <= 5; v++) {
-      h += '<button type="button" class="rpe-btn s' + v + '" data-rv="' + v + '">' + v + '</button>';
-    }
-    h += '</div></div>';
   }
+
   h += '<div class="lg"><input type="text" name="n_' + idx + '" id="n_' + idx + '" placeholder="Note (optionnelle)" autocomplete="off"></div>';
   h += '</div>';
+
+  h += '<div class="rest-display">⏱ ' + Math.floor(ex.rest / 60) + ':' + String(ex.rest % 60).padStart(2, '0') + '</div>';
 
   container.innerHTML = h;
 
@@ -350,6 +348,7 @@ function renderExo(ty, idx) {
   document.querySelectorAll('.pdc').forEach(b => {
     b.addEventListener('click', function() {
       const i = this.dataset.pdc;
+      if (i === undefined) return;
       const inp = document.getElementById('w_' + i);
       const wasAct = this.classList.contains('act');
       if (!wasAct) {
@@ -395,6 +394,7 @@ function renderExo(ty, idx) {
       el.addEventListener('change', () => saveFormSession(ty));
     }
   });
+
 }
 
 function showRecap(ty) {
@@ -408,7 +408,7 @@ function showRecap(ty) {
 
   const color = ty.toLowerCase();
   let h = '<div class="recap-card"><div class="recap-hdr recap-hdr-' + color + '">';
-  if (manualMode) h += '<span class="bdg bcx" style="font-size:.55rem;margin-right:8px">MANUEL</span>';
+  if (manualMode) h += '<span class="bdg" style="font-size:.55rem;margin-right:8px;background:rgba(245,158,11,0.12);color:var(--ui-accent)">MANUEL</span>';
   h += '<span class="recap-title">' + sec.label + '</span>';
   h += '<span class="recap-focus">' + sec.focus + '</span>';
   h += '</div><div class="recap-body">';

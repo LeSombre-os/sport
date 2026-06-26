@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'force_v6';
+const STORAGE_KEY = 'force_v2';
 const FORM_KEY = 'force_form_v2';
-const MANUAL_FORM_KEY = 'force_manual_v1';
+const MANUAL_FORM_KEY = 'force_manual_v2';
 
 const PR = {
   A: {
@@ -117,6 +117,26 @@ function migrateLogs() {
 function save() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ logs: ss, stats: userStats }));
+  } catch (e) {}
+}
+
+function loadForm() {
+  try {
+    const r = localStorage.getItem(FORM_KEY);
+    return r ? JSON.parse(r) : null;
+  } catch (e) { return null; }
+}
+
+function saveForm(data) {
+  try {
+    localStorage.setItem(FORM_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
+function clearForm() {
+  try {
+    localStorage.removeItem(FORM_KEY);
+    localStorage.removeItem(MANUAL_FORM_KEY);
   } catch (e) {}
 }
 
@@ -291,7 +311,7 @@ function fdISO(d) {
 }
 
 function getProgramVersion() {
-  return 'Force_Juin2026';
+  return 'Force_V2_Juin2026';
 }
 
 function renderCalendar() {
@@ -361,4 +381,13 @@ function getExpectedSession(dateStr) {
   const logsBefore = completedSessions().filter(s => s.d <= dateStr).sort((a, b) => a.d.localeCompare(b.d));
   const lastLog = logsBefore.length ? logsBefore[logsBefore.length - 1] : null;
   return lastLog ? (lastLog.t === 'A' ? 'B' : 'A') : 'A';
+}
+
+function findContextMonth() {
+  const cc = completedSessions();
+  if (cc.length) {
+    const last = cc[cc.length - 1];
+    return last.d.slice(0, 7);
+  }
+  return fdISO(new Date()).slice(0, 7);
 }

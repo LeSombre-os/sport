@@ -1,12 +1,11 @@
-const CACHE = 'force-v4';
+const CACHE = 'force-v2';
 const URLS = [
   'index.html',
   'css/style.css',
   'js/data.js',
-  'js/badges.js',
+  'js/ui.js',
   'js/log.js',
   'js/journal.js',
-  'js/stats.js',
   'js/export.js',
   'js/app.js',
   'manifest.json',
@@ -45,8 +44,6 @@ self.addEventListener('message', function(e) {
 
 self.addEventListener('fetch', function(e) {
   var req = e.request;
-
-  // index.html → network-first : toujours la version fraîche
   if (req.url.indexOf('index.html') !== -1 || req.url === self.location.origin + '/') {
     e.respondWith(
       fetch(req).then(function(res) {
@@ -60,8 +57,6 @@ self.addEventListener('fetch', function(e) {
     );
     return;
   }
-
-  // assets statiques → stale-while-revalidate
   e.respondWith(
     caches.match(req).then(function(cached) {
       var fetchPromise = fetch(req).then(function(res) {
