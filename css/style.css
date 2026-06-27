@@ -144,7 +144,9 @@ body{
 .cal-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.68rem;background:var(--bg);color:var(--text3);border:1.5px solid var(--border);transition:all .2s}
 .cal-badge.a{background:var(--a-bg);color:var(--a);border-color:var(--a)}
 .cal-badge.b{background:var(--b-bg);color:var(--b);border-color:var(--b)}
-.cal-badge.today{box-shadow:0 0 0 1.5px var(--text)}
+.cal-badge.today{box-shadow:0 0 0 2px var(--accent);background:var(--accent-bg)!important}
+.cal-day.today .cal-dn{color:var(--accent);font-weight:700}
+.cal-day.today::after{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:3px}
 .cal-badge.upcoming{opacity:.55}
 .cal-badge.off{opacity:.15}
 .cal-badge.past{opacity:.2}

@@ -133,13 +133,19 @@ function getExerciseHistory(exerciseNum, sessionId) {
 function getStreak() {
   let streak = 0;
   const sorted = [...DATA.logs].sort((a, b) => b.d.localeCompare(a.d));
+  if (sorted.length === 0) return 0;
   const today = new Date();
-  for (let i = 0; i < sorted.length; i++) {
-    const expected = new Date(today);
-    expected.setDate(expected.getDate() - i);
-    const expectedStr = expected.toISOString().slice(0, 10);
-    if (sorted[i]?.d === expectedStr) { streak++; }
-    else break;
+  today.setHours(0, 0, 0, 0);
+  const lastDate = new Date(sorted[0].d + 'T00:00:00');
+  const gapFromToday = Math.round((today - lastDate) / 86400000);
+  if (gapFromToday > 4) return 0;
+  streak = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1].d + 'T00:00:00');
+    const curr = new Date(sorted[i].d + 'T00:00:00');
+    const gap = Math.round((prev - curr) / 86400000);
+    if (gap > 4) break;
+    streak++;
   }
   return streak;
 }

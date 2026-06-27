@@ -61,17 +61,19 @@ function renderCalendar() {
     const isPast = d < today;
 
     let cls = 'cal-badge';
-    if (log) cls += log.t === 'A' ? ' a' : ' b';
-    else if (isTraining) {
-      const expected = getSessionForDay(d);
-      cls += expected === 'A' ? ' a' : ' b';
-      cls += ' upcoming';
+    if (isTraining) {
+      if (log) cls += log.t === 'A' ? ' a' : ' b';
+      else {
+        const expected = getSessionForDay(d);
+        cls += expected === 'A' ? ' a' : ' b';
+        cls += ' upcoming';
+      }
     }
-    if (!isTraining && !log) cls += ' off';
+    if (!isTraining) cls += ' off';
     if (isToday) cls += ' today';
     if (isPast && !log) cls += ' past';
 
-    html += '<div class="cal-day">';
+    html += '<div class="cal-day' + (isToday ? ' today' : '') + '">';
     html += '<span class="cal-dn">' + days[d.getDay()] + '</span>';
     html += '<div class="' + cls + '">' + (isTraining ? (log ? log.t : getSessionForDay(d)) : '·') + '</div>';
     html += '</div>';
