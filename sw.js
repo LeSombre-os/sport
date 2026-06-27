@@ -1,4 +1,4 @@
-const CACHE = 'force-v2';
+const CACHE = 'force-v3';
 const URLS = [
   'index.html',
   'css/style.css',

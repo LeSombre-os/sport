@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Programme Force V2</title>
+<title>Force</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#18181b">
+<meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
@@ -18,83 +18,58 @@
 <div class="toast" id="toast"></div>
 
 <div class="app">
-  <div class="hdr">
-    <h1>Programme Force V2</h1>
-    <p class="sub" id="streakDisplay"></p>
+  <!-- TAB 1: PROGRAMME -->
+  <div class="tc act" id="tProgram">
+    <div class="hdr"><h1>Programme Force</h1></div>
+    <div id="nextSession" class="card" style="padding:18px 20px;text-align:center;margin-bottom:14px"></div>
+    <div id="calendar"></div>
+    <div id="programExercises"></div>
+    <div id="streakDisplay" style="margin-top:10px"></div>
   </div>
 
-  <div class="nx nx-a" id="nx">
-    <div class="nx-in">
-      <p class="nx-l">Prochaine séance</p>
-      <div class="nx-t" id="nxT">SÉANCE A</div>
-      <p class="nx-f" id="nxF"></p>
-      <p class="nx-d" id="nxD"></p>
-      <p class="nx-w" id="nxW"></p>
-      <button class="nx-btn" id="nxBtn">Saisir cette séance</button>
-      <button class="nx-skip" id="skipBtn">Passer cette séance</button>
-    </div>
+  <!-- TAB 2: SAISIR -->
+  <div class="tc" id="tLog">
+    <div id="logContent"></div>
   </div>
 
-  <div class="tc act" id="tProgram"><div id="pC"></div></div>
-  <div class="tc" id="tLog"><div id="lC"></div></div>
-  <div class="tc" id="tJournal"><div id="jC"></div></div>
+  <!-- TAB 3: PARAMÈTRES -->
   <div class="tc" id="tSettings">
-    <div class="cd">
-      <div class="cd-h"><h2>Export &amp; Sauvegarde</h2></div>
-      <div class="cd-b">
-        <div class="stng">
-          <div class="ex-row">
-            <button class="ebtn ebtn-s" id="expCodeBtn">📋 Exporter par code</button>
-            <button class="ebtn ebtn-s" id="impCodeBtn">📂 Importer un code</button>
-          </div>
-        </div>
+    <div class="hdr"><h1>Paramètres</h1></div>
+    <div id="settingsStreak"></div>
+    <div class="card" style="padding:16px;margin-bottom:12px">
+      <h3 style="font-family:var(--ff-h);font-weight:700;font-size:.95rem;margin-bottom:12px">Données</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn" id="expCodeBtn">Exporter par code</button>
+        <button class="btn" id="impCodeBtn">Importer un code</button>
       </div>
     </div>
-    <div class="cd">
-      <div class="cd-h"><h2>Badges</h2></div>
-      <div class="cd-b" id="badgesSettings">Chargement...</div>
+    <div class="card" style="padding:16px">
+      <p style="font-size:.72rem;color:var(--text3);margin-bottom:8px">Version 3.0</p>
+      <button class="btn btn-d" id="rstBtn">Tout effacer</button>
     </div>
-    <div class="ftr"><p>Données sauvegardées automatiquement</p><p><a class="rst-link" id="rstBtn">Tout effacer</a></p></div>
   </div>
 
+  <!-- BOTTOM NAV -->
   <nav class="nav">
     <button class="nav-btn act" data-t="program">
-      <span class="nav-icon">📋</span>
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Programme
     </button>
     <button class="nav-btn" data-t="log">
-      <span class="nav-icon">💪</span>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       Saisir
     </button>
-    <button class="nav-btn" data-t="journal">
-      <span class="nav-icon">📖</span>
-      Journal
-    </button>
     <button class="nav-btn" data-t="settings">
-      <span class="nav-icon">⚙️</span>
-      Réglages
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Paramètres
     </button>
   </nav>
 </div>
 
-<div class="modal" id="modal">
-  <div class="modal-bg" id="modalBg"></div>
-  <div class="modal-c" id="modalContent">
-    <h3>Restaurer des données</h3>
-    <p>Colle le code reçu par WhatsApp</p>
-    <textarea id="codeInput" rows="4" placeholder="Colle le code ici..."></textarea>
-    <div class="modal-acts">
-      <button class="ebtn ebtn-p" id="restoreBtn">Restaurer</button>
-      <button class="ebtn" id="modalCancel">Annuler</button>
-    </div>
-  </div>
-</div>
+<div class="modal" id="modal"><div class="modal-bg" id="modalBg"></div><div class="modal-c" id="modalContent"></div></div>
 
 <script src="js/data.js"></script>
-<script src="js/ui.js"></script>
 <script src="js/log.js"></script>
-<script src="js/journal.js"></script>
-<script src="js/export.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
