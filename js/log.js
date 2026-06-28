@@ -1,5 +1,6 @@
 const DRAFT_KEY = 'force_v3_draft';
 let logState = null;
+let wakeLockSentinel = null;
 
 function setAccent(sessionId) {
   var root = document.documentElement;
@@ -21,6 +22,7 @@ function startLog(sessionId) {
   var draft = loadDraft();
   if (draft && draft.sessionId === sessionId) {
     logState = draft;
+    if (!logState.sessionDate) logState.sessionDate = new Date().toISOString().slice(0, 10);
     renderLogStep();
     requestWakeLock();
     return;
@@ -41,8 +43,12 @@ function startLog(sessionId) {
     };
   });
 
+  var dateInput = document.getElementById('logDate');
+  var sessionDate = dateInput ? dateInput.value : new Date().toISOString().slice(0, 10);
+
   logState = {
     sessionId: sessionId,
+    sessionDate: sessionDate,
     currentEx: 0,
     exercises: exercises,
     startTime: Date.now()
@@ -69,18 +75,32 @@ function clearDraft() {
 
 function requestWakeLock() {
   if ('wakeLock' in navigator) {
-    navigator.wakeLock.request('screen').catch(function() {});
+    navigator.wakeLock.request('screen').then(function(sentinel) {
+      wakeLockSentinel = sentinel;
+    }).catch(function() {});
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLockSentinel) {
+    wakeLockSentinel.release().catch(function() {});
+    wakeLockSentinel = null;
   }
 }
 
 function renderLogHome() {
   setAccent(getNextSession().id);
   const next = getNextSession();
+  var todayStr = new Date().toISOString().slice(0, 10);
   var html =
     '<div style="padding-top:30px;text-align:center">' +
-    '<div style="font-size:3rem;margin-bottom:16px">💪</div>' +
+    '<svg viewBox="0 0 64 64" style="width:48px;height:48px;margin-bottom:12px;color:var(--accent)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="32" cy="32" r="28"/><path d="M24 28c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8-8-3.6-8-8zM18 50c0-7.7 6.3-14 14-14s14 6.3 14 14"/></svg>' +
     '<h2 style="font-family:var(--ff-h);font-weight:700;font-size:1.3rem;margin-bottom:8px">Prêt pour l\'entraînement ?</h2>' +
-    '<p style="color:var(--text2);font-size:.85rem;margin-bottom:24px">Choisis une séance pour commencer</p>' +
+    '<p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">Choisis une date et une séance</p>' +
+    '<div style="margin-bottom:16px;text-align:left;max-width:280px;margin-left:auto;margin-right:auto">' +
+    '<label style="font-size:.75rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Date</label>' +
+    '<input type="date" id="logDate" value="' + todayStr + '" class="input">' +
+    '</div>' +
     '<div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto">' +
     '<button class="btn btn-p" id="logStartA" style="width:100%;padding:16px;font-size:1rem">Séance A — Tirage & Cuisses</button>' +
     '<button class="btn" id="logStartB" style="width:100%;padding:16px;font-size:1rem;border-color:var(--b);color:var(--b)">Séance B — Poussée</button>' +
@@ -113,14 +133,14 @@ function renderLogStep() {
     setsHtml +=
       '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">' +
       '<span style="font-size:.5rem;color:var(--text3);text-transform:uppercase;font-weight:600">S' + (s + 1) + '</span>' +
-      '<input type="number" data-idx="' + s + '" class="set-input" min="0" max="999" value="' + (ex.performed[s] || '') + '" style="width:46px;height:46px;border:2px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.06);color:var(--text);font-size:.95rem;font-weight:700;text-align:center;outline:none;-moz-appearance:textfield">' +
+      '<input type="number" data-idx="' + s + '" class="set-input" min="0" max="999" value="' + (ex.performed[s] || '') + '">' +
       '</div>';
   }
 
   var rpeHtml = '';
   for (var r = 1; r <= 5; r++) {
     rpeHtml +=
-      '<button class="rpe-btn" style="width:40px;height:40px;border-radius:50%;border:2px solid var(--border);background:transparent;color:var(--text3);font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;justify-content:center">' + r + '</button>';
+      '<button class="rpe-btn">' + r + '</button>';
   }
 
   // Rest display: just text showing the rest time
@@ -168,6 +188,7 @@ function renderLogStep() {
 function bindLogEvents() {
   document.getElementById('logBackBtn').addEventListener('click', function() {
     if (confirm('Annuler la saisie en cours ?')) {
+      releaseWakeLock();
       clearDraft();
       logState = null;
       switchTab('program');
@@ -260,11 +281,12 @@ function validateExercise() {
 
 function finishLog() {
   if (!logState) return;
+  releaseWakeLock();
 
-  var now = new Date();
+  var date = logState.sessionDate || new Date().toISOString().slice(0, 10);
   var log = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    d: now.toISOString().slice(0, 10),
+    d: date,
     t: logState.sessionId,
     ex: logState.exercises.map(function(ex, i) {
       return {

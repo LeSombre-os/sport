@@ -138,7 +138,11 @@ body{
 @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 
 /* CALENDAR */
-.cal{display:flex;gap:3px;justify-content:center;padding:14px 0 8px;overflow-x:auto}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 2px}
+.cal-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+.cal-btn:active{background:rgba(255,255,255,0.06);transform:scale(.92)}
+.cal-label{font-size:.65rem;color:var(--text2);font-weight:600}
+.cal{display:flex;gap:3px;justify-content:center;padding:4px 0 8px;overflow-x:auto}
 .cal-day{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:38px}
 .cal-dn{font-size:.45rem;color:var(--text3);text-transform:uppercase;letter-spacing:.02em;font-weight:600}
 .cal-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.68rem;background:var(--bg);color:var(--text3);border:1.5px solid var(--border);transition:all .2s}
@@ -194,7 +198,7 @@ body{
 
 /* SET INPUTS */
 input.set-input{
-  width:48px;height:48px;
+  width:46px;height:46px;
   border:2px solid var(--border);
   border-radius:var(--rad-xs);
   background:rgba(255,255,255,0.06);
@@ -282,10 +286,10 @@ input.set-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* RESPONSIVE */
 @media(max-width:399px){
-  input.set-input{width:42px;height:42px}
+  input.set-input{width:40px;height:40px}
 }
 @media(min-width:600px){
-  input.set-input{width:56px;height:52px}
+  input.set-input{width:54px;height:50px}
   html{font-size:18px}
 }
 @media(min-width:820px){

@@ -1,6 +1,7 @@
 // Tab navigation
 const TABS = ['program', 'log', 'settings'];
 let currentTab = 'program';
+let calendarOffset = 0;
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.t));
@@ -48,9 +49,21 @@ function renderCalendar() {
   const days = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const startOfWeek = getMondayOfWeek(today);
+  const baseDate = new Date(today);
+  baseDate.setDate(baseDate.getDate() + calendarOffset * 7);
+  const startOfWeek = getMondayOfWeek(baseDate);
 
-  let html = '<div class="cal">';
+  const weekStart = startOfWeek.getDate() + '/' + (startOfWeek.getMonth() + 1);
+  const weekEnd = new Date(startOfWeek);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekLabel = weekStart + ' – ' + weekEnd.getDate() + '/' + (weekEnd.getMonth() + 1);
+
+  let html = '<div class="cal-nav">' +
+    '<button class="cal-btn" id="calPrev">‹</button>' +
+    '<span class="cal-label">' + weekLabel + '</span>' +
+    '<button class="cal-btn" id="calNext">›</button>' +
+    '</div><div class="cal">';
+
   for (let i = 0; i < 7; i++) {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
@@ -63,10 +76,13 @@ function renderCalendar() {
     let cls = 'cal-badge';
     if (isTraining) {
       if (log) cls += log.t === 'A' ? ' a' : ' b';
-      else {
+      else if (!isToday) {
         const expected = getSessionForDay(d);
         cls += expected === 'A' ? ' a' : ' b';
         cls += ' upcoming';
+      } else {
+        const expected = getSessionForDay(d);
+        cls += expected === 'A' ? ' a' : ' b';
       }
     }
     if (!isTraining) cls += ' off';
@@ -105,6 +121,7 @@ function getNextSessionDate() {
 
 // Program view
 function renderProgram() {
+  calendarOffset = 0;
   const next = getNextSession();
   const nextDateInfo = getNextSessionDate();
   const streak = getStreak();
@@ -146,9 +163,14 @@ function renderProgramExercises(session) {
     const lastWeight = history.length ? history[history.length - 1].weight : null;
     const displayWeight = lastWeight !== null ? lastWeight : ex.weight;
     const weightDisplay = displayWeight > 0 ? displayWeight + 'kg' : 'PDC';
-    const progressHtml = (lastWeight && lastWeight > ex.weight)
-      ? '<div style="margin-top:4px"><span style="color:var(--success);font-size:.7rem;font-weight:600">↑ ' + ex.weight + 'kg → ' + lastWeight + 'kg</span></div>'
-      : '';
+    let progressHtml = '';
+    if (lastWeight) {
+      if (lastWeight > ex.weight) {
+        progressHtml = '<div style="margin-top:4px"><span style="color:var(--success);font-size:.7rem;font-weight:600">↑ ' + ex.weight + 'kg → ' + lastWeight + 'kg</span></div>';
+      } else if (lastWeight < ex.weight) {
+        progressHtml = '<div style="margin-top:4px"><span style="color:var(--danger);font-size:.7rem;font-weight:600">↓ ' + ex.weight + 'kg → ' + lastWeight + 'kg</span></div>';
+      }
+    }
 
     var restMin = Math.floor(ex.rest / 60);
     var restSec = ex.rest % 60;
@@ -174,9 +196,12 @@ function renderProgramExercises(session) {
 // Settings
 function renderSettings() {
   const streak = getStreak();
+  const sorted = [...DATA.logs].sort((a, b) => b.d.localeCompare(a.d));
+  const lastDate = sorted.length > 0 ? new Date(sorted[0].d + 'T00:00:00') : null;
+  const lastStr = lastDate ? lastDate.getDate() + '/' + (lastDate.getMonth() + 1) : '';
   document.getElementById('settingsStreak').innerHTML = streak > 0
-    ? '<div class="card" style="padding:16px;margin-bottom:12px;text-align:center"><div style="font-size:2rem">🔥</div><div style="font-weight:700;font-size:1.2rem;margin:4px 0">' + streak + ' séance' + (streak > 1 ? 's' : '') + '</div><div style="font-size:.75rem;color:var(--text3)">consécutive' + (streak > 1 ? 's' : '') + '</div></div>'
-    : '<div class="card" style="padding:16px;margin-bottom:12px;text-align:center"><div style="font-size:2rem">🔥</div><div style="font-size:.85rem;color:var(--text3);margin-top:4px">Aucune séance encore</div></div>';
+    ? '<div class="card" style="padding:16px;margin-bottom:12px;text-align:center"><div style="font-size:2rem">🔥</div><div style="font-weight:700;font-size:1.2rem;margin:4px 0">' + streak + ' séance' + (streak > 1 ? 's' : '') + '</div><div style="font-size:.75rem;color:var(--text3)">consécutive' + (streak > 1 ? 's' : '') + (lastStr ? ' · Dernière : ' + lastStr : '') + '</div></div>'
+    : '<div class="card" style="padding:16px;margin-bottom:12px;text-align:center"><div style="font-size:2rem">🔥</div><div style="font-size:.85rem;color:var(--text3);margin-top:4px' + (lastStr ? '" >Dernière séance : ' + lastStr : '">Aucune séance encore') + '</div></div>';
 }
 
 // Export/Import
@@ -241,6 +266,15 @@ document.getElementById('rstBtn').addEventListener('click', function() {
     renderSettings();
     showToast('Données effacées', 'ok');
   }
+});
+
+// Calendar navigation
+document.getElementById('calendar').addEventListener('click', function(e) {
+  const btn = e.target.closest('.cal-btn');
+  if (!btn) return;
+  if (btn.id === 'calPrev') calendarOffset--;
+  else if (btn.id === 'calNext') calendarOffset++;
+  document.getElementById('calendar').innerHTML = renderCalendar();
 });
 
 // Init
