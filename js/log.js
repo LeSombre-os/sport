@@ -35,6 +35,7 @@ function startLog(sessionId) {
       num: ex.num,
       name: ex.name,
       sets: ex.sets,
+      reps: ex.reps,
       weight: lastWeight,
       rest: ex.rest,
       performed: [],
@@ -71,6 +72,32 @@ function loadDraft() {
 
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function getRepTarget(reps) {
+  if (!reps) return '';
+  var m = reps.match(/(\d+)\s*-\s*(\d+)/);
+  if (m) return Math.round((parseInt(m[1]) + parseInt(m[2])) / 2);
+  var n = parseInt(reps);
+  if (!isNaN(n)) return n;
+  return reps;
+}
+
+function saveCurrentExData() {
+  if (!logState) return;
+  var ex = logState.exercises[logState.currentEx];
+  if (!ex) return;
+  var w = document.getElementById('logWeight');
+  if (w) ex.weight = parseInt(w.value) || 0;
+  var inp = document.querySelectorAll('#setsContainer input');
+  if (inp.length) {
+    var p = [];
+    inp.forEach(function(el) { p.push(parseInt(el.value) || 0); });
+    ex.performed = p;
+  }
+  var n = document.getElementById('exNote');
+  if (n) ex.note = n.value;
+  saveDraft();
 }
 
 function requestWakeLock() {
@@ -122,9 +149,13 @@ function renderLogStep() {
   const total = logState.exercises.length;
   const idx = logState.currentEx;
 
-  var progressHtml = '<div style="margin-bottom:16px;display:flex;gap:4px">';
+  var progressHtml = '<div style="margin-bottom:16px;display:flex;gap:8px;justify-content:center">';
   for (var i = 0; i < total; i++) {
-    progressHtml += '<div style="flex:1;height:3px;border-radius:2px;background:' + (i <= idx ? 'var(--accent)' : 'var(--border)') + ';transition:background .3s"></div>';
+    var done = logState.exercises[i].performed && logState.exercises[i].performed.some(function(v) { return v > 0; });
+    var dia = i === idx ? 'var(--accent)' : (done ? 'var(--success)' : 'var(--border)');
+    var bg = i === idx ? 'var(--accent-bg)' : (done ? 'rgba(107,158,122,0.15)' : 'transparent');
+    var tc = i === idx ? 'var(--accent)' : (done ? 'var(--success)' : 'var(--text3)');
+    progressHtml += '<button class="ex-dot" data-exidx="' + i + '" style="width:34px;height:34px;border-radius:50%;border:2px solid ' + dia + ';background:' + bg + ';color:' + tc + ';font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center">' + (i + 1) + '</button>';
   }
   progressHtml += '</div>';
 
@@ -148,7 +179,9 @@ function renderLogStep() {
 
   var html =
     '<div class="hdr" style="display:flex;align-items:center;gap:8px">' +
-    '<button id="logBackBtn" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px 8px">←</button>' +
+    (idx > 0
+      ? '<button id="prevExBtn" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px 8px">←</button>'
+      : '<button id="cancelSessBtn" style="background:none;border:none;color:var(--danger);font-size:1rem;cursor:pointer;padding:4px 8px;font-weight:600">✕</button>') +
     '<div style="flex:1;text-align:center">' +
     '<h1 style="font-size:1rem;font-weight:700">Séance ' + logState.sessionId + '</h1>' +
     '<div style="font-size:.72rem;color:var(--text3)">' + (idx + 1) + ' / ' + total + '</div>' +
@@ -162,7 +195,7 @@ function renderLogStep() {
     '<span style="font-size:.75rem;color:var(--text3)">kg</span>' +
     '</div>' +
     '<div style="margin-bottom:14px">' +
-    '<label style="font-size:.75rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Séries (' + ex.sets + ')</label>' +
+    '<label style="font-size:.75rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Séries : ' + ex.sets + ' × ' + getRepTarget(ex.reps) + '</label>' +
     '<div style="display:flex;gap:6px;flex-wrap:wrap" id="setsContainer">' + setsHtml + '</div>' +
     '</div>' +
     '<div style="margin-bottom:14px">' +
@@ -177,8 +210,9 @@ function renderLogStep() {
     '<div style="padding:14px 18px;margin-bottom:14px;background:var(--accent-bg);border-radius:14px;border:1px solid var(--accent);text-align:center">' +
     '<span style="font-size:1.1rem;color:var(--accent);font-weight:700">⏱ Repos : ' + restText + '</span>' +
     '</div>' +
-    '<button id="validateExBtn" class="btn btn-p" style="width:100%;padding:16px;font-size:1rem">' +
-    (idx < total - 1 ? 'Valider & suivant →' : 'Terminer la séance ✓') +
+    (idx > 0 ? '<button id="prevExBtn2" class="btn" style="flex:1;padding:14px;font-size:.9rem">← Ex. ' + idx + '</button>' : '') +
+    '<button id="validateExBtn" class="btn btn-p" style="flex:1;padding:14px;font-size:.9rem">' +
+    (idx < total - 1 ? 'Suivant →' : 'Terminer ✓') +
     '</button>';
 
   document.getElementById('logContent').innerHTML = html;
@@ -186,14 +220,34 @@ function renderLogStep() {
 }
 
 function bindLogEvents() {
-  document.getElementById('logBackBtn').addEventListener('click', function() {
-    if (confirm('Annuler la saisie en cours ?')) {
-      releaseWakeLock();
-      clearDraft();
-      logState = null;
-      switchTab('program');
-    }
+  var cancelBtn = document.getElementById('cancelSessBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      if (confirm('Annuler la séance ? Les données seront perdues.')) {
+        releaseWakeLock();
+        clearDraft();
+        logState = null;
+        switchTab('program');
+      }
+    });
+  }
+
+  function gotoEx(idx) {
+    saveCurrentExData();
+    logState.currentEx = idx;
+    renderLogStep();
+  }
+
+  document.querySelectorAll('.ex-dot').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      gotoEx(parseInt(this.dataset.exidx));
+    });
   });
+
+  var prevBtn = document.getElementById('prevExBtn');
+  if (prevBtn) prevBtn.addEventListener('click', function() { gotoEx(logState.currentEx - 1); });
+  var prevBtn2 = document.getElementById('prevExBtn2');
+  if (prevBtn2) prevBtn2.addEventListener('click', function() { gotoEx(logState.currentEx - 1); });
 
   document.querySelectorAll('.rpe-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -251,27 +305,15 @@ function bindLogEvents() {
 }
 
 function validateExercise() {
-  var ex = logState.exercises[logState.currentEx];
-  var weight = parseInt(document.getElementById('logWeight')?.value) || 0;
-  var inputs = document.querySelectorAll('#setsContainer input');
-  var performed = [];
-  inputs.forEach(function(inp) {
-    var v = parseInt(inp.value) || 0;
-    if (v > 0) performed.push(v);
-  });
-  var note = document.getElementById('exNote')?.value?.trim() || '';
-
-  if (performed.length === 0) {
-    showToast('Saisis au moins une série', 'ko');
-    return;
-  }
-
-  ex.weight = weight;
-  ex.performed = performed;
-  ex.rpe = ex.rpe || 3;
-  ex.note = note;
-
+  saveCurrentExData();
   if (logState.currentEx >= logState.exercises.length - 1) {
+    var empty = logState.exercises.filter(function(ex) {
+      return !ex.performed || ex.performed.length === 0 || ex.performed.every(function(v) { return v === 0; });
+    });
+    if (empty.length > 0) {
+      showToast('Remplis toutes les séries (' + empty.length + ' exo(s) vide(s))', 'ko');
+      return;
+    }
     finishLog();
   } else {
     logState.currentEx++;
